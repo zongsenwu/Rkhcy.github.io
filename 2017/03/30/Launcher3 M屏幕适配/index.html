@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述安卓的碎片化非常严重，如果适配工作没做好的话，经常会出现这种情况，你写的APP在大屏的手机上显示正常，在小屏的手机上显示就不那么尽如人意了。Launcher3作为手机的门面，我们发现在不同屏幕大小的设备上，适配工作都做的挺好的，该文就探究下它是如何实现的。">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Launcher3 M屏幕适配">
+<meta property="og:url" content="http://yoursite.com/2017/03/30/Launcher3 M屏幕适配/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述安卓的碎片化非常严重，如果适配工作没做好的话，经常会出现这种情况，你写的APP在大屏的手机上显示正常，在小屏的手机上显示就不那么尽如人意了。Launcher3作为手机的门面，我们发现在不同屏幕大小的设备上，适配工作都做的挺好的，该文就探究下它是如何实现的。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-12T07:28:15.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Launcher3 M屏幕适配">
+<meta name="twitter:description" content="概述安卓的碎片化非常严重，如果适配工作没做好的话，经常会出现这种情况，你写的APP在大屏的手机上显示正常，在小屏的手机上显示就不那么尽如人意了。Launcher3作为手机的门面，我们发现在不同屏幕大小的设备上，适配工作都做的挺好的，该文就探究下它是如何实现的。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/30/Launcher3 M屏幕适配/"/>
+
+
+
+
+
+  <title>Launcher3 M屏幕适配 | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/30/Launcher3 M屏幕适配/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Launcher3 M屏幕适配</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-30T00:00:00+08:00">
+                2017-03-30
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/03/30/Launcher3 M屏幕适配/" class="leancloud_visitors" data-flag-title="Launcher3 M屏幕适配">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>安卓的碎片化非常严重，如果适配工作没做好的话，经常会出现这种情况，你写的APP在大屏的手机上显示正常，在小屏的手机上显示就不那么尽如人意了。Launcher3作为手机的门面，我们发现在不同屏幕大小的设备上，适配工作都做的挺好的，该文就探究下它是如何实现的。</p>
+<a id="more"></a>
+<h3 id="猜想"><a href="#猜想" class="headerlink" title="猜想"></a>猜想</h3><p>要适配不同大小的屏幕，屏幕的大小当然是设备自己最清楚了，因此设备把自身的屏幕宽高告诉给launcher，然后launcher再根据宽高再选择怎样的显示？</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>查看Launcher3的onCreate()方法，省略掉部分代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        ......</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line"></span><br><span class="line">        LauncherAppState.setApplicationContext(getApplicationContext());</span><br><span class="line">        LauncherAppState app = LauncherAppState.getInstance();</span><br><span class="line"></span><br><span class="line">        // Load configuration-specific DeviceProfile</span><br><span class="line">        mDeviceProfile = getResources().getConfiguration().orientation</span><br><span class="line">                == Configuration.ORIENTATION_LANDSCAPE ?</span><br><span class="line">                        app.getInvariantDeviceProfile().landscapeProfile</span><br><span class="line">                            : app.getInvariantDeviceProfile().portraitProfile;</span><br><span class="line">        ......</span><br><span class="line">        setContentView(R.layout.launcher);</span><br><span class="line"></span><br><span class="line">        setupViews();</span><br><span class="line">        mDeviceProfile.layout(this);</span><br><span class="line">        ......</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里看到在初始化的时候会判断当前屏幕是水平显示还是竖直显示，获得一个DeviceProfile实例，从名字看，这个就是我们寻觅已久的设备配置，先看下它是怎么实例化的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">代码路径：/packages/apps/Launcher3/src/com/android/launcher3/InvariantDeviceProfile.java</span><br><span class="line">    InvariantDeviceProfile(Context context) &#123;</span><br><span class="line">        ......</span><br><span class="line">        landscapeProfile = new DeviceProfile(context, this, smallestSize, largestSize,</span><br><span class="line">                largeSide, smallSide, true /* isLandscape */);</span><br><span class="line">        portraitProfile = new DeviceProfile(context, this, smallestSize, largestSize,</span><br><span class="line">                smallSide, largeSide, false /* isLandscape */);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>DeviceProfile的初始化是在InvariantDeviceProfile的构造函数中，这里注意第二个参数，传进去的就是InvariantDeviceProfile本身，继续查看DeviceProfile的构造函数我们可以发现配置里的很多值都是从InvariantDeviceProfile获取的，如图标大小，字体大小等，所以我们来看下这个InvariantDeviceProfile是个什么东东。</p>
+<h3 id="InvariantDeviceProfile"><a href="#InvariantDeviceProfile" class="headerlink" title="InvariantDeviceProfile"></a>InvariantDeviceProfile</h3><p>从字面翻译上看，它表示不变的设备配置。啥意思？先看下它是怎样初始化的。在Launcher的onCreate中获取LauncherAppState 的时候做了一些初始化工作，其中就包括初始化InvariantDeviceProfile</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">代码路径：packages/apps/Launcher3/src/com/android/launcher3/LauncherAppState.java</span><br><span class="line">    private LauncherAppState() &#123;</span><br><span class="line">        .......</span><br><span class="line">        mInvariantDeviceProfile = new InvariantDeviceProfile(sContext);</span><br><span class="line">        .......</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>再看下InvariantDeviceProfile的构造函数</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line">InvariantDeviceProfile(Context context) &#123;</span><br><span class="line">    mContext = context;</span><br><span class="line">    WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);</span><br><span class="line">    //获取设备默认的屏幕</span><br><span class="line">    Display display = wm.getDefaultDisplay();</span><br><span class="line">    DisplayMetrics dm = new DisplayMetrics();</span><br><span class="line">    display.getMetrics(dm);</span><br><span class="line"></span><br><span class="line">    Point smallestSize = new Point();</span><br><span class="line">    Point largestSize = new Point();</span><br><span class="line">    //确定屏幕的范围</span><br><span class="line">    display.getCurrentSizeRange(smallestSize, largestSize);</span><br><span class="line"></span><br><span class="line">    // This guarantees that width &lt; height</span><br><span class="line">    //获取最小的屏幕宽高值</span><br><span class="line">    minWidthDps = Utilities.dpiFromPx(Math.min(smallestSize.x, smallestSize.y), dm);</span><br><span class="line">    minHeightDps = Utilities.dpiFromPx(Math.min(largestSize.x, largestSize.y), dm);</span><br><span class="line"></span><br><span class="line">    //得到最接近的设置配置表集合</span><br><span class="line">    ArrayList&lt;InvariantDeviceProfile&gt; closestProfiles =</span><br><span class="line">            findClosestDeviceProfiles(minWidthDps, minHeightDps, getPredefinedDeviceProfiles());</span><br><span class="line">    InvariantDeviceProfile interpolatedDeviceProfileOut =</span><br><span class="line">            invDistWeightedInterpolate(minWidthDps,  minHeightDps, closestProfiles);</span><br><span class="line">    //获取设备列表集合中第一张表并对参数赋值</span><br><span class="line">    InvariantDeviceProfile closestProfile = closestProfiles.get(0);</span><br><span class="line">    numRows = closestProfile.numRows;</span><br><span class="line">    numColumns = closestProfile.numColumns;</span><br><span class="line">    numHotseatIcons = closestProfile.numHotseatIcons;</span><br><span class="line">    hotseatAllAppsRank = (int) (numHotseatIcons / 2);</span><br><span class="line">    defaultLayoutId = closestProfile.defaultLayoutId;</span><br><span class="line">    numFolderRows = closestProfile.numFolderRows;</span><br><span class="line">    numFolderColumns = closestProfile.numFolderColumns;</span><br><span class="line">    minAllAppsPredictionColumns = closestProfile.minAllAppsPredictionColumns;</span><br><span class="line"></span><br><span class="line">    iconSize = interpolatedDeviceProfileOut.iconSize;</span><br><span class="line">    iconBitmapSize = Utilities.pxFromDp(iconSize, dm);</span><br><span class="line">    iconTextSize = interpolatedDeviceProfileOut.iconTextSize;</span><br><span class="line"></span><br><span class="line">    fillResIconDpi = getLauncherIconDensity(iconBitmapSize);</span><br><span class="line"></span><br><span class="line">    // If the partner customization apk contains any grid overrides, apply them</span><br><span class="line">    // Supported overrides: numRows, numColumns, iconSize</span><br><span class="line">    applyPartnerDeviceProfileOverrides(context, dm);</span><br><span class="line"></span><br><span class="line">    Point realSize = new Point();</span><br><span class="line">    display.getRealSize(realSize);</span><br><span class="line">    // The real size never changes. smallSide and largeSide will remain the</span><br><span class="line">    // same in any orientation.</span><br><span class="line">    int smallSide = Math.min(realSize.x, realSize.y);</span><br><span class="line">    int largeSide = Math.max(realSize.x, realSize.y);</span><br><span class="line"></span><br><span class="line">    landscapeProfile = new DeviceProfile(context, this, smallestSize, largestSize,</span><br><span class="line">            largeSide, smallSide, true /* isLandscape */);</span><br><span class="line">    portraitProfile = new DeviceProfile(context, this, smallestSize, largestSize,</span><br><span class="line">            smallSide, largeSide, false /* isLandscape */);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码中首先获取WindowManger服务，根据该服务获取最小屏幕宽高值，然后通过findClosestDeviceProfiles方法返回最接近的设备配置集合。findClosestDeviceProfiles()方法的第三个参数getPredefinedDeviceProfiles()如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">ArrayList&lt;InvariantDeviceProfile&gt; getPredefinedDeviceProfiles() &#123;</span><br><span class="line">    ArrayList&lt;InvariantDeviceProfile&gt; predefinedDeviceProfiles = new ArrayList&lt;&gt;();</span><br><span class="line">    // width, height, #rows, #columns, #folder rows, #folder columns,</span><br><span class="line">    // iconSize, iconTextSize, #hotseat, #hotseatIconSize, defaultLayoutId.</span><br><span class="line">    int fourByFourDefaultLayout = R.xml.default_workspace_4x4;</span><br><span class="line">    if (mContext.getResources().getBoolean(</span><br><span class="line">            R.bool.config_launcher_customWorkspace))&#123;</span><br><span class="line">        fourByFourDefaultLayout = R.xml.custom_workspace_4x4;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Super Short Stubby&quot;,</span><br><span class="line">            255, 300, 2, 3, 2, 3, 3, 48, 13, 3, 48, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Shorter Stubby&quot;,</span><br><span class="line">            255, 400, 3, 3, 3, 3, 3, 48, 13, 3, 48, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Short Stubby&quot;,</span><br><span class="line">            275, 420, 3, 4, 3, 4, 4, 48, 13, 5, 48, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Stubby&quot;,</span><br><span class="line">            255, 450, 3, 4, 3, 4, 4, 48, 13, 5, 48, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Nexus S&quot;,</span><br><span class="line">            296, 491.33f, 4, 4, 4, 4, 4, 48, 13, 5, 48, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Nexus 4&quot;,</span><br><span class="line">            335, 567, 4, 4, 4, 4, 4, DEFAULT_ICON_SIZE_DP, 13, 5, 56, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Nexus 5&quot;,</span><br><span class="line">            359, 567, 4, 4, 4, 4, 4, DEFAULT_ICON_SIZE_DP, 13, 5, 56, fourByFourDefaultLayout));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Large Phone&quot;,</span><br><span class="line">            406, 694, 5, 5, 4, 4, 4, 64, 14.4f,  5, 56, R.xml.default_workspace_5x5));</span><br><span class="line">    // The tablet profile is odd in that the landscape orientation</span><br><span class="line">    // also includes the nav bar on the side</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Nexus 7&quot;,</span><br><span class="line">            575, 904, 5, 6, 4, 5, 4, 72, 14.4f,  7, 60, R.xml.default_workspace_5x6));</span><br><span class="line">    // Larger tablet profiles always have system bars on the top &amp; bottom</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;Nexus 10&quot;,</span><br><span class="line">            727, 1207, 5, 6, 4, 5, 4, 76, 14.4f,  7, 64, R.xml.default_workspace_5x6));</span><br><span class="line">    predefinedDeviceProfiles.add(new InvariantDeviceProfile(&quot;20-inch Tablet&quot;,</span><br><span class="line">            1527, 2527,7, 7, 6, 6, 4, 100, 20,  7, 72, fourByFourDefaultLayout));</span><br><span class="line"></span><br><span class="line">    return predefinedDeviceProfiles;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>市面上屏幕那么多，不可能雨露均沾，Google在这里预制一些主流的屏幕所对应的的launcher配置信息，以Nexus 5为例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">InvariantDeviceProfile(&quot;Nexus 5&quot;,</span><br><span class="line">                359, 567, 4, 4, 4, 4, 4, DEFAULT_ICON_SIZE_DP, 13, 5, 56, fourByFourDefaultLayout));</span><br></pre></td></tr></table></figure>
+<p>参数依次代表的含义为：最小宽359，高567，桌面布局显示为4<em>4，文件夹中图标布局显示为4</em>4，桌面图标大小为DEFAULT_ICON_SIZE_DP(默认为60)，图标下的标题文本大小为13，dock栏图标数量为5，dock栏图标大小为56，默认加载的布局文件为fourByFourDefaultLayout。<br>findClosestDeviceProfiles()就是根据传的最小宽高值从launcher保存的这么多块屏幕中选择最接近的一块屏幕显示,代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Returns the closest device profiles ordered by closeness to the specified width and height</span><br><span class="line"> */</span><br><span class="line">// Package private visibility for testing.</span><br><span class="line">ArrayList&lt;InvariantDeviceProfile&gt; findClosestDeviceProfiles(</span><br><span class="line">        final float width, final float height, ArrayList&lt;InvariantDeviceProfile&gt; points) &#123;</span><br><span class="line"></span><br><span class="line">    // Sort the profiles by their closeness to the dimensions</span><br><span class="line">    ArrayList&lt;InvariantDeviceProfile&gt; pointsByNearness = points;</span><br><span class="line">    Collections.sort(pointsByNearness, new Comparator&lt;InvariantDeviceProfile&gt;() &#123;</span><br><span class="line">        public int compare(InvariantDeviceProfile a, InvariantDeviceProfile b) &#123;</span><br><span class="line">            return (int) (dist(width, height, a.minWidthDps, a.minHeightDps)</span><br><span class="line">                    - dist(width, height, b.minWidthDps, b.minHeightDps));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    return pointsByNearness;</span><br><span class="line">&#125;</span><br><span class="line">@Thunk float dist(float x0, float y0, float x1, float y1) &#123;</span><br><span class="line">    return (float) Math.hypot(x1 - x0, y1 - y0);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>把最小宽高值和预制的那些屏幕的最小宽高值做平方差计算，再把计算结果从小到大排序。<br>之后获取表中的第一张屏幕，然后就把该屏幕的配置赋值给当前的设备。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">InvariantDeviceProfile closestProfile = closestProfiles.get(0);</span><br><span class="line">numRows = closestProfile.numRows;</span><br><span class="line">numColumns = closestProfile.numColumns;</span><br><span class="line">numHotseatIcons = closestProfile.numHotseatIcons;</span><br><span class="line">hotseatAllAppsRank = (int) (numHotseatIcons / 2);</span><br><span class="line">defaultLayoutId = closestProfile.defaultLayoutId;</span><br><span class="line">numFolderRows = closestProfile.numFolderRows;</span><br><span class="line">numFolderColumns = closestProfile.numFolderColumns;</span><br></pre></td></tr></table></figure>
+<p>但是桌面的图标大小和标题大小以及dock栏的图标大小却是通过interpolatedDeviceProfileOut来获取的，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">iconSize = interpolatedDeviceProfileOut.iconSize;</span><br><span class="line">iconBitmapSize = Utilities.pxFromDp(iconSize, dm);</span><br><span class="line">iconTextSize = interpolatedDeviceProfileOut.iconTextSize;</span><br><span class="line">hotseatIconSize = interpolatedDeviceProfileOut.hotseatIconSize;</span><br></pre></td></tr></table></figure>
+<p>interpolatedDeviceProfileOut的获取如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">InvariantDeviceProfile interpolatedDeviceProfileOut =</span><br><span class="line">                invDistWeightedInterpolate(minWidthDps,  minHeightDps, closestProfiles);</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">// Package private visibility for testing.</span><br><span class="line"> InvariantDeviceProfile invDistWeightedInterpolate(float width, float height,</span><br><span class="line">             ArrayList&lt;InvariantDeviceProfile&gt; points) &#123;</span><br><span class="line">     float weights = 0;</span><br><span class="line"></span><br><span class="line">     InvariantDeviceProfile p = points.get(0);</span><br><span class="line">     if (dist(width, height, p.minWidthDps, p.minHeightDps) == 0) &#123;</span><br><span class="line">         return p;</span><br><span class="line">     &#125;</span><br><span class="line"></span><br><span class="line">     InvariantDeviceProfile out = new InvariantDeviceProfile();</span><br><span class="line">     for (int i = 0; i &lt; points.size() &amp;&amp; i &lt; KNEARESTNEIGHBOR; ++i) &#123;</span><br><span class="line">         p = new InvariantDeviceProfile(points.get(i));</span><br><span class="line">         float w = weight(width, height, p.minWidthDps, p.minHeightDps, WEIGHT_POWER);</span><br><span class="line">         weights += w;</span><br><span class="line">         out.add(p.multiply(w));</span><br><span class="line">     &#125;</span><br><span class="line">     return out.multiply(1.0f/weights);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p>如果设置配置集合中的第一张表刚刚好，dist(width, height, p.minWidthDps, p.minHeightDps) == 0；那就说明正好是我们找的那块屏幕，如果不是，launcher会遍历最接近的三块(KNEARESTNEIGHBOR)配置,做加权运算，之后取平均值，目的也是为了达到最佳的显示效果。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>launcher适配不同屏幕的思路就是先保存市面上常见的屏幕尺寸，并指定了这些屏幕显示的方式，几行几列，图标文本大小等，再根据当前设备的宽高选择最合适的一块屏幕。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/29/Java单例模式/" rel="next" title="Java单例模式">
+                <i class="fa fa-chevron-left"></i> Java单例模式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/20/Android View事件分发机制/" rel="prev" title="Android View事件分发机制">
+                Android View事件分发机制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#猜想"><span class="nav-number">2.</span> <span class="nav-text">猜想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#分析"><span class="nav-number">3.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#InvariantDeviceProfile"><span class="nav-number">4.</span> <span class="nav-text">InvariantDeviceProfile</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

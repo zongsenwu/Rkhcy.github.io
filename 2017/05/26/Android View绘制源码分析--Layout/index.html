@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述上篇文章分析DecorView的绘制的measure流程，这篇文章继续分析DecorView绘制的第二个阶段，layout流程。">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android View绘制源码分析--Layout">
+<meta property="og:url" content="http://yoursite.com/2017/05/26/Android View绘制源码分析--Layout/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述上篇文章分析DecorView的绘制的measure流程，这篇文章继续分析DecorView绘制的第二个阶段，layout流程。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/layout.png">
+<meta property="og:updated_time" content="2017-10-12T07:32:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android View绘制源码分析--Layout">
+<meta name="twitter:description" content="概述上篇文章分析DecorView的绘制的measure流程，这篇文章继续分析DecorView绘制的第二个阶段，layout流程。">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/layout.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/05/26/Android View绘制源码分析--Layout/"/>
+
+
+
+
+
+  <title>Android View绘制源码分析--Layout | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/05/26/Android View绘制源码分析--Layout/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android View绘制源码分析--Layout</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-26T00:00:00+08:00">
+                2017-05-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/05/26/Android View绘制源码分析--Layout/" class="leancloud_visitors" data-flag-title="Android View绘制源码分析--Layout">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>上篇文章分析DecorView的绘制的measure流程，这篇文章继续分析DecorView绘制的第二个阶段，layout流程。</p>
+<a id="more"></a>
+<h2 id="流程分析"><a href="#流程分析" class="headerlink" title="流程分析"></a>流程分析</h2><p>先看ViewRootImpl的performLayout方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/ViewRootImpl.java</span><br><span class="line">    private void performLayout(WindowManager.LayoutParams lp, int desiredWindowWidth,</span><br><span class="line">            int desiredWindowHeight) &#123;</span><br><span class="line">        mLayoutRequested = false;</span><br><span class="line">        mScrollMayChange = true;</span><br><span class="line">        //布局开始</span><br><span class="line">        mInLayout = true;</span><br><span class="line">        //host就是DecorView</span><br><span class="line">        final View host = mView;</span><br><span class="line"></span><br><span class="line">        Trace.traceBegin(Trace.TRACE_TAG_VIEW, &quot;layout&quot;);</span><br><span class="line">        try &#123;</span><br><span class="line">            //DecorView开始布局,以左上角为原点</span><br><span class="line">            host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());</span><br><span class="line">            //布局结束</span><br><span class="line">            mInLayout = false;</span><br><span class="line">            //这里mLayoutRequesters的size值在requestLayoutDuringLayout方法中会改变，requestLayoutDuringLayout会在View的requestLayout中被调用</span><br><span class="line">            int numViewsRequestingLayout = mLayoutRequesters.size();</span><br><span class="line">            if (numViewsRequestingLayout &gt; 0) &#123;</span><br><span class="line">                // requestLayout() was called during layout.</span><br><span class="line">                // If no layout-request flags are set on the requesting views, there is no problem.</span><br><span class="line">                // If some requests are still pending, then we need to clear those flags and do</span><br><span class="line">                // a full request/measure/layout pass to handle this situation.</span><br><span class="line">                ArrayList&lt;View&gt; validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters,</span><br><span class="line">                        false);</span><br><span class="line">                if (validLayoutRequesters != null) &#123;</span><br><span class="line">                    // Set this flag to indicate that any further requests are happening during</span><br><span class="line">                    // the second pass, which may result in posting those requests to the next</span><br><span class="line">                    // frame instead</span><br><span class="line">                    mHandlingLayoutInLayoutRequest = true;</span><br><span class="line"></span><br><span class="line">                    // Process fresh layout requests, then measure and layout</span><br><span class="line">                    int numValidRequests = validLayoutRequesters.size();</span><br><span class="line">                    for (int i = 0; i &lt; numValidRequests; ++i) &#123;</span><br><span class="line">                        final View view = validLayoutRequesters.get(i);</span><br><span class="line">                        Log.w(&quot;View&quot;, &quot;requestLayout() improperly called by &quot; + view +</span><br><span class="line">                                &quot; during layout: running second layout pass&quot;);</span><br><span class="line">                        view.requestLayout();</span><br><span class="line">                    &#125;</span><br><span class="line">                    measureHierarchy(host, lp, mView.getContext().getResources(),</span><br><span class="line">                            desiredWindowWidth, desiredWindowHeight);</span><br><span class="line">                    mInLayout = true;</span><br><span class="line">                    host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());</span><br><span class="line"></span><br><span class="line">                    mHandlingLayoutInLayoutRequest = false;</span><br><span class="line"></span><br><span class="line">                    // Check the valid requests again, this time without checking/clearing the</span><br><span class="line">                    // layout flags, since requests happening during the second pass get noop&apos;d</span><br><span class="line">                    validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters, true);</span><br><span class="line">                    if (validLayoutRequesters != null) &#123;</span><br><span class="line">                        final ArrayList&lt;View&gt; finalRequesters = validLayoutRequesters;</span><br><span class="line">                        // Post second-pass requests to the next frame</span><br><span class="line">                        getRunQueue().post(new Runnable() &#123;</span><br><span class="line">                            @Override</span><br><span class="line">                            public void run() &#123;</span><br><span class="line">                                int numValidRequests = finalRequesters.size();</span><br><span class="line">                                for (int i = 0; i &lt; numValidRequests; ++i) &#123;</span><br><span class="line">                                    final View view = finalRequesters.get(i);</span><br><span class="line">                                    Log.w(&quot;View&quot;, &quot;requestLayout() improperly called by &quot; + view +</span><br><span class="line">                                            &quot; during second layout pass: posting in next frame&quot;);</span><br><span class="line">                                    view.requestLayout();</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125; finally &#123;</span><br><span class="line">            Trace.traceEnd(Trace.TRACE_TAG_VIEW);</span><br><span class="line">        &#125;</span><br><span class="line">        mInLayout = false;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>在13行调用DecorView的layout方法，传入的位置参数左0，上0，右为设备的宽度，下为设备的高度；在DecorView和FrameLayout中都没找到layout方法，继续往上查看ViewGroup，layout方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/ViewGroup.java</span><br><span class="line">    public final void layout(int l, int t, int r, int b) &#123;</span><br><span class="line">        if (!mSuppressLayout &amp;&amp; (mTransition == null || !mTransition.isChangingLayout())) &#123;</span><br><span class="line">            if (mTransition != null) &#123;</span><br><span class="line">                mTransition.layoutChange(this);</span><br><span class="line">            &#125;</span><br><span class="line">            super.layout(l, t, r, b);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            // record the fact that we noop&apos;d it; request layout when transition finishes</span><br><span class="line">            mLayoutCalledWhileSuppressed = true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>注意到这里的layout的修饰是final，说明ViewGroup的子类无法复写该方法，该方法又回调了父类的layout方法，所以看下View中的layout:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/View.java</span><br><span class="line">    /**</span><br><span class="line">     * Assign a size and position to a view and all of its</span><br><span class="line">     * descendants</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;This is the second phase of the layout mechanism.</span><br><span class="line">     * (The first is measuring). In this phase, each parent calls</span><br><span class="line">     * layout on all of its children to position them.</span><br><span class="line">     * This is typically done using the child measurements</span><br><span class="line">     * that were stored in the measure pass().&lt;/p&gt;</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;Derived classes should not override this method.</span><br><span class="line">     * Derived classes with children should override</span><br><span class="line">     * onLayout. In that method, they should</span><br><span class="line">     * call layout on each of their children.&lt;/p&gt;</span><br><span class="line">     *</span><br><span class="line">     * @param l Left position, relative to parent</span><br><span class="line">     * @param t Top position, relative to parent</span><br><span class="line">     * @param r Right position, relative to parent</span><br><span class="line">     * @param b Bottom position, relative to parent</span><br><span class="line">     */</span><br><span class="line">    @SuppressWarnings(&#123;&quot;unchecked&quot;&#125;)</span><br><span class="line">    public void layout(int l, int t, int r, int b) &#123;</span><br><span class="line">        //是否需要重新测量</span><br><span class="line">        if ((mPrivateFlags3 &amp; PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT) != 0) &#123;</span><br><span class="line">            onMeasure(mOldWidthMeasureSpec, mOldHeightMeasureSpec);</span><br><span class="line">            mPrivateFlags3 &amp;= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">        &#125;</span><br><span class="line">        //保存之前View的位置</span><br><span class="line">        int oldL = mLeft;</span><br><span class="line">        int oldT = mTop;</span><br><span class="line">        int oldB = mBottom;</span><br><span class="line">        int oldR = mRight;</span><br><span class="line">        //与之前相比位置是否发生改变，通过setFrame方法设置最新的位置</span><br><span class="line">        boolean changed = isLayoutModeOptical(mParent) ?</span><br><span class="line">                setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);</span><br><span class="line"></span><br><span class="line">        if (changed || (mPrivateFlags &amp; PFLAG_LAYOUT_REQUIRED) == PFLAG_LAYOUT_REQUIRED) &#123;</span><br><span class="line">            //若发生了改变，具体的布局实现</span><br><span class="line">            onLayout(changed, l, t, r, b);</span><br><span class="line">            mPrivateFlags &amp;= ~PFLAG_LAYOUT_REQUIRED;</span><br><span class="line"></span><br><span class="line">            ListenerInfo li = mListenerInfo;</span><br><span class="line">            if (li != null &amp;&amp; li.mOnLayoutChangeListeners != null) &#123;</span><br><span class="line">                ArrayList&lt;OnLayoutChangeListener&gt; listenersCopy =</span><br><span class="line">                        (ArrayList&lt;OnLayoutChangeListener&gt;)li.mOnLayoutChangeListeners.clone();</span><br><span class="line">                int numListeners = listenersCopy.size();</span><br><span class="line">                for (int i = 0; i &lt; numListeners; ++i) &#123;</span><br><span class="line">                    //若设置了布局变化的监听事件，当布局发生变化时触发</span><br><span class="line">                    listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mPrivateFlags &amp;= ~PFLAG_FORCE_LAYOUT;</span><br><span class="line">        mPrivateFlags3 |= PFLAG3_IS_LAID_OUT;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>通过注释我们了解到，这是绘制机制的第二部分，在这部分父布局会调用layout方法确定子布局的位置，并且子类不应该复写layout而应该复写onLayout。查看这里的setFrame方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Assign a size and position to this view.</span><br><span class="line"> *</span><br><span class="line"> * This is called from layout.</span><br><span class="line"> *</span><br><span class="line"> * @param left Left position, relative to parent</span><br><span class="line"> * @param top Top position, relative to parent</span><br><span class="line"> * @param right Right position, relative to parent</span><br><span class="line"> * @param bottom Bottom position, relative to parent</span><br><span class="line"> * @return true if the new size and position are different than the</span><br><span class="line"> *         previous ones</span><br><span class="line"> * &#123;@hide&#125;</span><br><span class="line"> */</span><br><span class="line">protected boolean setFrame(int left, int top, int right, int bottom) &#123;</span><br><span class="line">    boolean changed = false;</span><br><span class="line"></span><br><span class="line">    if (mLeft != left || mRight != right || mTop != top || mBottom != bottom) &#123;</span><br><span class="line">        //与之前相比上下左右只要有一个改变就为true</span><br><span class="line">        changed = true;</span><br><span class="line"></span><br><span class="line">        // Remember our drawn bit</span><br><span class="line">        int drawn = mPrivateFlags &amp; PFLAG_DRAWN;</span><br><span class="line">        //之前的宽度</span><br><span class="line">        int oldWidth = mRight - mLeft;</span><br><span class="line">        //之前的高度</span><br><span class="line">        int oldHeight = mBottom - mTop;</span><br><span class="line">        //新的宽度</span><br><span class="line">        int newWidth = right - left;</span><br><span class="line">        //新的高度</span><br><span class="line">        int newHeight = bottom - top;</span><br><span class="line">        //大小是否改变</span><br><span class="line">        boolean sizeChanged = (newWidth != oldWidth) || (newHeight != oldHeight);</span><br><span class="line"></span><br><span class="line">        // Invalidate our old position</span><br><span class="line">        //清除之前的位置</span><br><span class="line">        invalidate(sizeChanged);</span><br><span class="line">        //最新的位置赋值，View的位置就确定了</span><br><span class="line">        mLeft = left;</span><br><span class="line">        mTop = top;</span><br><span class="line">        mRight = right;</span><br><span class="line">        mBottom = bottom;</span><br><span class="line">        mRenderNode.setLeftTopRightBottom(mLeft, mTop, mRight, mBottom);</span><br><span class="line"></span><br><span class="line">        mPrivateFlags |= PFLAG_HAS_BOUNDS;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        if (sizeChanged) &#123;</span><br><span class="line">            sizeChange(newWidth, newHeight, oldWidth, oldHeight);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if ((mViewFlags &amp; VISIBILITY_MASK) == VISIBLE || mGhostView != null) &#123;</span><br><span class="line">            // If we are visible, force the DRAWN bit to on so that</span><br><span class="line">            // this invalidate will go through (at least to our parent).</span><br><span class="line">            // This is because someone may have invalidated this view</span><br><span class="line">            // before this call to setFrame came in, thereby clearing</span><br><span class="line">            // the DRAWN bit.</span><br><span class="line">            mPrivateFlags |= PFLAG_DRAWN;</span><br><span class="line">            invalidate(sizeChanged);</span><br><span class="line">            // parent display list may need to be recreated based on a change in the bounds</span><br><span class="line">            // of any child</span><br><span class="line">            invalidateParentCaches();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // Reset drawn bit to original value (invalidate turns it off)</span><br><span class="line">        mPrivateFlags |= drawn;</span><br><span class="line"></span><br><span class="line">        mBackgroundSizeChanged = true;</span><br><span class="line">        if (mForegroundInfo != null) &#123;</span><br><span class="line">            mForegroundInfo.mBoundsChanged = true;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        notifySubtreeAccessibilityStateChangedIfNeeded();</span><br><span class="line">    &#125;</span><br><span class="line">    return changed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从该方法可以知道，如果位置发生了变化，则会保存最新的位置值，而这里也是四个位置值初始化的地方，我们平时调用getWidth/getHeight如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Return the width of the your view.</span><br><span class="line"> *</span><br><span class="line"> * @return The width of your view, in pixels.</span><br><span class="line"> */</span><br><span class="line">@ViewDebug.ExportedProperty(category = &quot;layout&quot;)</span><br><span class="line">public final int getWidth() &#123;</span><br><span class="line">    return mRight - mLeft;</span><br><span class="line">&#125;</span><br><span class="line">/**</span><br><span class="line"> * Return the height of your view.</span><br><span class="line"> *</span><br><span class="line"> * @return The height of your view, in pixels.</span><br><span class="line"> */</span><br><span class="line">@ViewDebug.ExportedProperty(category = &quot;layout&quot;)</span><br><span class="line">public final int getHeight() &#123;</span><br><span class="line">    return mBottom - mTop;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因此，必须在layout方法执行后调用getWidth、getHeight才有效。回到View的layout方法，既然在setFrame中已经确定了布局的位置，那么onLayout方法又是用来干嘛的呢？DecorView中复写了onLayout</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/View.java</span><br><span class="line">    /**</span><br><span class="line">    protected void onLayout(boolean changed, int left, int top, int right, int bottom) &#123;</span><br><span class="line">        super.onLayout(changed, left, top, right, bottom);</span><br><span class="line">        getOutsets(mOutsets);</span><br><span class="line">        if (mOutsets.left &gt; 0) &#123;</span><br><span class="line">            offsetLeftAndRight(-mOutsets.left);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mOutsets.top &gt; 0) &#123;</span><br><span class="line">            offsetTopAndBottom(-mOutsets.top);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mApplyFloatingVerticalInsets) &#123;</span><br><span class="line">            offsetTopAndBottom(mFloatingInsets.top);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mApplyFloatingHorizontalInsets) &#123;</span><br><span class="line">            offsetLeftAndRight(mFloatingInsets.left);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // If the application changed its SystemUI metrics, we might also have to adapt</span><br><span class="line">        // our shadow elevation.</span><br><span class="line">        updateElevation();</span><br><span class="line">        mAllowUpdateElevation = true;</span><br><span class="line"></span><br><span class="line">        if (changed &amp;&amp; mResizeMode == RESIZE_MODE_DOCKED_DIVIDER) &#123;</span><br><span class="line">            getViewRootImpl().requestInvalidateRootRenderNode();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里又调用了父类的onLayout，看下FrameLayout的onLayout</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">源码路径：SDK/sources/android-24/android/widget/FrameLayout.java</span><br><span class="line">    protected void onLayout(boolean changed, int left, int top, int right, int bottom) &#123;</span><br><span class="line">        layoutChildren(left, top, right, bottom, false /* no force left gravity */);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    void layoutChildren(int left, int top, int right, int bottom, boolean forceLeftGravity) &#123;</span><br><span class="line">        final int count = getChildCount();</span><br><span class="line">        //获取父布局的位置</span><br><span class="line">        final int parentLeft = getPaddingLeftWithForeground();</span><br><span class="line">        final int parentRight = right - left - getPaddingRightWithForeground();</span><br><span class="line"></span><br><span class="line">        final int parentTop = getPaddingTopWithForeground();</span><br><span class="line">        final int parentBottom = bottom - top - getPaddingBottomWithForeground();</span><br><span class="line">        //遍历子布局</span><br><span class="line">        for (int i = 0; i &lt; count; i++) &#123;</span><br><span class="line">            final View child = getChildAt(i);</span><br><span class="line">            //如果子布局的Visibility属性不为GONE</span><br><span class="line">            if (child.getVisibility() != GONE) &#123;</span><br><span class="line">                final LayoutParams lp = (LayoutParams) child.getLayoutParams();</span><br><span class="line">                //获取子布局的宽高</span><br><span class="line">                final int width = child.getMeasuredWidth();</span><br><span class="line">                final int height = child.getMeasuredHeight();</span><br><span class="line">                //子布局左、上位置</span><br><span class="line">                int childLeft;</span><br><span class="line">                int childTop;</span><br><span class="line"></span><br><span class="line">                int gravity = lp.gravity;</span><br><span class="line">                if (gravity == -1) &#123;</span><br><span class="line">                    gravity = DEFAULT_CHILD_GRAVITY;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                final int layoutDirection = getLayoutDirection();</span><br><span class="line">                final int absoluteGravity = Gravity.getAbsoluteGravity(gravity, layoutDirection);</span><br><span class="line">                final int verticalGravity = gravity &amp; Gravity.VERTICAL_GRAVITY_MASK;</span><br><span class="line">                //计算子布局的左位置</span><br><span class="line">                switch (absoluteGravity &amp; Gravity.HORIZONTAL_GRAVITY_MASK) &#123;</span><br><span class="line">                    case Gravity.CENTER_HORIZONTAL:</span><br><span class="line">                        childLeft = parentLeft + (parentRight - parentLeft - width) / 2 +</span><br><span class="line">                        lp.leftMargin - lp.rightMargin;</span><br><span class="line">                        break;</span><br><span class="line">                    case Gravity.RIGHT:</span><br><span class="line">                        if (!forceLeftGravity) &#123;</span><br><span class="line">                            childLeft = parentRight - width - lp.rightMargin;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line">                    case Gravity.LEFT:</span><br><span class="line">                    default:</span><br><span class="line">                        childLeft = parentLeft + lp.leftMargin;</span><br><span class="line">                &#125;</span><br><span class="line">                //计算子布局的上位置</span><br><span class="line">                switch (verticalGravity) &#123;</span><br><span class="line">                    case Gravity.TOP:</span><br><span class="line">                        childTop = parentTop + lp.topMargin;</span><br><span class="line">                        break;</span><br><span class="line">                    case Gravity.CENTER_VERTICAL:</span><br><span class="line">                        childTop = parentTop + (parentBottom - parentTop - height) / 2 +</span><br><span class="line">                        lp.topMargin - lp.bottomMargin;</span><br><span class="line">                        break;</span><br><span class="line">                    case Gravity.BOTTOM:</span><br><span class="line">                        childTop = parentBottom - height - lp.bottomMargin;</span><br><span class="line">                        break;</span><br><span class="line">                    default:</span><br><span class="line">                        childTop = parentTop + lp.topMargin;</span><br><span class="line">                &#125;</span><br><span class="line">                //子布局根据位置调用layout自身布局</span><br><span class="line">                child.layout(childLeft, childTop, childLeft + width, childTop + height);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>FrameLayout中的onLayout又调用了自身的layoutChildren方法，从名字可以大致判断该方法是为子View确定位置的，layoutChildren中遍历FrameLayout下的所有子View，如果子View的Visibility属性不为GONE，根据父布局的位置计算子View的位置，主要和子View的gravity有关，最后再调用子View的layout方法确定位置，因此这里就解答了上面的疑惑，FrameLayout的位置是在父类View中就确定了的，不像measure流程大小是由子View的大小确定。另外FrameLayout extends ViewGroup extends View，分别再看下ViewGroup 和View中onLayout方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/ViewGroup.java</span><br><span class="line">    protected abstract void onLayout(boolean changed,</span><br><span class="line">            int l, int t, int r, int b);</span><br><span class="line"></span><br><span class="line">源码路径:SDK/sources/android-24/android/view/View.java</span><br><span class="line">    /**</span><br><span class="line">     * Called from layout when this view should</span><br><span class="line">     * assign a size and position to each of its children.</span><br><span class="line">     *</span><br><span class="line">     * Derived classes with children should override</span><br><span class="line">     * this method and call layout on each of</span><br><span class="line">     * their children.</span><br><span class="line">     * @param changed This is a new size or position for this view</span><br><span class="line">     * @param left Left position, relative to parent</span><br><span class="line">     * @param top Top position, relative to parent</span><br><span class="line">     * @param right Right position, relative to parent</span><br><span class="line">     * @param bottom Bottom position, relative to parent</span><br><span class="line">     */</span><br><span class="line">    protected void onLayout(boolean changed, int left, int top, int right, int bottom) &#123;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>ViewGroup中的onLayout是个抽象方法，所以ViewGroup的子类必须实现onLayout，View中的onLayout是个空方法，所以具体的实现在子类中完成。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><a href="http://7xjvg5.com1.z0.glb.clouddn.com/layout.png" target="_blank" rel="noopener"><img src="http://7xjvg5.com1.z0.glb.clouddn.com/layout.png" alt="img"></a></p>
+<ul>
+<li>FrameLayout的位置是在父类View中就确定了的，不像measure流程大小是由子View的大小确定</li>
+<li>自定义ViewGroup必须实现onLayout方法，因为在ViewGroup中该方法是个抽象方法</li>
+<li>在layout执行完成后调用View的getWidth、getHeight方法才能返回有效值，因此位置是在layout步骤的setFrame方法中初始化的。</li>
+<li>如果布局中的View的Visibility属性设置为GONE，则不对该View进行布局，该View不占据屏幕空间</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/25/Android View绘制源码分析--Measure/" rel="next" title="Android View绘制源码分析--Measure">
+                <i class="fa fa-chevron-left"></i> Android View绘制源码分析--Measure
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/31/Android View绘制源码分析--Draw/" rel="prev" title="Android View绘制源码分析--Draw">
+                Android View绘制源码分析--Draw <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#流程分析"><span class="nav-number">2.</span> <span class="nav-text">流程分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述接上篇继续分析Android中ViewGroup的事件分发机制,在分析之前先看一张官网ViewGroup的介绍图     可以看到平时常用的那些布局如LinearLayout、FrameLayout等都是ViewGroup的子类,而ViewGroup是View的子类,API中也说了, ViewGroup是个可以包含其他View的特殊View。ViewGroup重写了dispatchTouchE">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android ViewGroup事件分发机制">
+<meta property="og:url" content="http://yoursite.com/2017/04/26/Android ViewGroup事件分发机制/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述接上篇继续分析Android中ViewGroup的事件分发机制,在分析之前先看一张官网ViewGroup的介绍图     可以看到平时常用的那些布局如LinearLayout、FrameLayout等都是ViewGroup的子类,而ViewGroup是View的子类,API中也说了, ViewGroup是个可以包含其他View的特殊View。ViewGroup重写了dispatchTouchE">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/WechatIMG5.png">
+<meta property="og:updated_time" content="2017-10-12T07:32:53.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android ViewGroup事件分发机制">
+<meta name="twitter:description" content="概述接上篇继续分析Android中ViewGroup的事件分发机制,在分析之前先看一张官网ViewGroup的介绍图     可以看到平时常用的那些布局如LinearLayout、FrameLayout等都是ViewGroup的子类,而ViewGroup是View的子类,API中也说了, ViewGroup是个可以包含其他View的特殊View。ViewGroup重写了dispatchTouchE">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/WechatIMG5.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/04/26/Android ViewGroup事件分发机制/"/>
+
+
+
+
+
+  <title>Android ViewGroup事件分发机制 | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/26/Android ViewGroup事件分发机制/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android ViewGroup事件分发机制</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-04-26T00:00:00+08:00">
+                2017-04-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/04/26/Android ViewGroup事件分发机制/" class="leancloud_visitors" data-flag-title="Android ViewGroup事件分发机制">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>接上篇继续分析Android中ViewGroup的事件分发机制,在分析之前先看一张官网ViewGroup的介绍图    <img src="http://7xjvg5.com1.z0.glb.clouddn.com/WechatIMG5.png" style="zoom:50%"></p>
+<p>可以看到平时常用的那些布局如LinearLayout、FrameLayout等都是ViewGroup的子类,而ViewGroup是View的子类,API中也说了, ViewGroup是个可以包含其他View的特殊View。ViewGroup重写了dispatchTouchEvent,与View相比多了onInterceptTouchEvent方法用来判断是否拦截事件,onTouchEvent方法未重写和View保持一致。</p>
+<a id="more"></a>
+<h2 id="例子1"><a href="#例子1" class="headerlink" title="例子1"></a>例子1</h2><p>MainActiviy.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line">public class MainActivity extends AppCompatActivity implements View.OnClickListener,View.OnTouchListener&#123;</span><br><span class="line">    private SonView sonView;</span><br><span class="line">    private GrandView grandView;</span><br><span class="line">    private ParentView parentView;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">        sonView = (SonView) findViewById(R.id.son);</span><br><span class="line">        parentView = (ParentView) findViewById(R.id.parent);</span><br><span class="line">        grandView = (GrandView) findViewById(R.id.grand);</span><br><span class="line"></span><br><span class="line">        sonView.setOnClickListener(this);</span><br><span class="line">        sonView.setOnTouchListener(this);</span><br><span class="line"></span><br><span class="line">        parentView.setOnClickListener(this);</span><br><span class="line">        parentView.setOnTouchListener(this);</span><br><span class="line"></span><br><span class="line">        grandView.setOnClickListener(this);</span><br><span class="line">        grandView.setOnTouchListener(this);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public void onClick(View v) &#123;</span><br><span class="line">        switch (v.getId()) &#123;</span><br><span class="line">            case R.id.grand:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onClick&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case R.id.parent:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onClick&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case R.id.son:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView onClick&quot;);</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onTouch(View v, MotionEvent event) &#123;</span><br><span class="line">        switch (v.getId()) &#123;</span><br><span class="line">            case R.id.grand:</span><br><span class="line">                switch (event.getAction()) &#123;</span><br><span class="line">                    case MotionEvent.ACTION_DOWN:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;GrandView onTouch ACTION_DOWN&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    case MotionEvent.ACTION_MOVE:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;GrandView onTouch ACTION_MOVE&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    case MotionEvent.ACTION_UP:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;GrandView onTouch ACTION_UP&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    default:</span><br><span class="line">                        break;</span><br><span class="line">                &#125;</span><br><span class="line">                break;</span><br><span class="line">            case R.id.parent:</span><br><span class="line">                switch (event.getAction()) &#123;</span><br><span class="line">                    case MotionEvent.ACTION_DOWN:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;ParentView onTouch ACTION_DOWN&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    case MotionEvent.ACTION_MOVE:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;ParentView onTouch ACTION_MOVE&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    case MotionEvent.ACTION_UP:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;ParentView onTouch ACTION_UP&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    default:</span><br><span class="line">                        break;</span><br><span class="line">                &#125;</span><br><span class="line">                break;</span><br><span class="line">            case R.id.son:</span><br><span class="line">                switch (event.getAction()) &#123;</span><br><span class="line">                    case MotionEvent.ACTION_DOWN:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;SonView onTouch ACTION_DOWN&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    case MotionEvent.ACTION_MOVE:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;SonView onTouch ACTION_MOVE&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    case MotionEvent.ACTION_UP:</span><br><span class="line">                        Log.d(&quot;hcy&quot;, &quot;SonView onTouch ACTION_UP&quot;);</span><br><span class="line">                        break;</span><br><span class="line">                    default:</span><br><span class="line">                        break;</span><br><span class="line">                &#125;</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>GrandView.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">public class GrandView extends LinearLayout &#123;</span><br><span class="line">    public GrandView(Context context) &#123;</span><br><span class="line">        super(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public GrandView(Context context, AttributeSet attrs) &#123;</span><br><span class="line">        super(context, attrs);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public GrandView(Context context, AttributeSet attrs, int defStyleAttr) &#123;</span><br><span class="line">        super(context, attrs, defStyleAttr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onTouchEvent(MotionEvent event) &#123;</span><br><span class="line">        switch (event.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.onTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onInterceptTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">        switch (ev.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onInterceptTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onInterceptTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView onInterceptTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.onInterceptTouchEvent(ev);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">        switch (ev.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView dispatchTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView dispatchTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;GrandView dispatchTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.dispatchTouchEvent(ev);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ParentView.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line">public class ParentView extends LinearLayout &#123;</span><br><span class="line">    public ParentView(Context context) &#123;</span><br><span class="line">        super(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public ParentView(Context context, AttributeSet attrs) &#123;</span><br><span class="line">        super(context, attrs);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public ParentView(Context context, AttributeSet attrs, int defStyleAttr) &#123;</span><br><span class="line">        super(context, attrs, defStyleAttr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onInterceptTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">        switch (ev.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onInterceptTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onInterceptTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onInterceptTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.onInterceptTouchEvent(ev);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onTouchEvent(MotionEvent event) &#123;</span><br><span class="line">        switch (event.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView onTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.onTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">        switch (ev.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView dispatchTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView dispatchTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;ParentView dispatchTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.dispatchTouchEvent(ev);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>SonView.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">public class SonView extends View &#123;</span><br><span class="line"></span><br><span class="line">    public SonView(Context context) &#123;</span><br><span class="line">        super(context);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public SonView(Context context, AttributeSet attrs) &#123;</span><br><span class="line">        super(context, attrs);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public SonView(Context context, AttributeSet attrs, int defStyleAttr) &#123;</span><br><span class="line">        super(context, attrs, defStyleAttr);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean onTouchEvent(MotionEvent event) &#123;</span><br><span class="line">        switch (event.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView onTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView onTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView onTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.onTouchEvent(event);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">        switch (ev.getAction()) &#123;</span><br><span class="line">            case MotionEvent.ACTION_DOWN:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView dispatchTouchEvent: ACTION_DOWN&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_MOVE:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView dispatchTouchEvent: ACTION_MOVE&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MotionEvent.ACTION_UP:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;SonView dispatchTouchEvent: ACTION_UP&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        return super.dispatchTouchEvent(ev);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>activity_main.xml</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;FrameLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;</span><br><span class="line">    xmlns:tools=&quot;http://schemas.android.com/tools&quot;</span><br><span class="line">    android:id=&quot;@+id/activity_main&quot;</span><br><span class="line">    android:layout_width=&quot;match_parent&quot;</span><br><span class="line">    android:layout_height=&quot;match_parent&quot;</span><br><span class="line">    tools:context=&quot;com.example.hcy.event.MainActivity&quot;&gt;</span><br><span class="line">    &lt;com.example.hcy.event.view.GrandView</span><br><span class="line">        android:id=&quot;@+id/grand&quot;</span><br><span class="line">        android:background=&quot;@android:color/holo_orange_dark&quot;</span><br><span class="line">        android:gravity=&quot;center&quot;</span><br><span class="line">        android:layout_gravity=&quot;center&quot;</span><br><span class="line">        android:layout_width=&quot;match_parent&quot;</span><br><span class="line">        android:layout_height=&quot;match_parent&quot;&gt;</span><br><span class="line">        &lt;com.example.hcy.event.view.ParentView</span><br><span class="line">            android:id=&quot;@+id/parent&quot;</span><br><span class="line">            android:background=&quot;@android:color/holo_purple&quot;</span><br><span class="line">            android:gravity=&quot;center&quot;</span><br><span class="line">            android:layout_width=&quot;300dp&quot;</span><br><span class="line">            android:layout_height=&quot;300dp&quot;&gt;</span><br><span class="line">            &lt;com.example.hcy.event.view.SonView</span><br><span class="line">                android:id=&quot;@+id/son&quot;</span><br><span class="line">                android:layout_width=&quot;200dp&quot;</span><br><span class="line">                android:layout_height=&quot;200dp&quot;</span><br><span class="line">                android:background=&quot;@android:color/holo_green_dark&quot;</span><br><span class="line">                android:gravity=&quot;center&quot;/&gt;</span><br><span class="line">        &lt;/com.example.hcy.event.view.ParentView&gt;</span><br><span class="line">    &lt;/com.example.hcy.event.view.GrandView&gt;</span><br><span class="line"></span><br><span class="line">&lt;/FrameLayout&gt;</span><br></pre></td></tr></table></figure>
+<p>点击中间的SonView，log打印如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : GrandView dispatchTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : GrandView onInterceptTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : ParentView dispatchTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : ParentView onInterceptTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : SonView dispatchTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : SonView onTouch ACTION_DOWN</span><br><span class="line">03-12 17:29:49.680 12809 12809 D hcy     : SonView onTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : GrandView dispatchTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : GrandView onInterceptTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : ParentView dispatchTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : ParentView onInterceptTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : SonView dispatchTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : SonView onTouch ACTION_UP</span><br><span class="line">03-12 17:29:49.709 12809 12809 D hcy     : SonView onTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:29:49.710 12809 12809 D hcy     : SonView onClick</span><br></pre></td></tr></table></figure>
+<p>从上面的log中可以看出事件是先传递到最外层的ViewGroup，再由ViewGroup递归传递到消费事件的具体View。与ViewGroup相比，View中没有onInterceptTouchEvent方法，因此不存在拦截。</p>
+<h2 id="例子2"><a href="#例子2" class="headerlink" title="例子2"></a>例子2</h2><p>将SonView的onTouchEvent方法返回值改为false。<br>点击SonView区域打印日志如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : GrandView dispatchTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : GrandView onInterceptTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : ParentView dispatchTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : ParentView onInterceptTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : SonView dispatchTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : SonView onTouch ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : SonView onTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : ParentView onTouch ACTION_DOWN</span><br><span class="line">03-12 17:43:49.257 12809 12809 D hcy     : ParentView onTouchEvent: ACTION_DOWN</span><br><span class="line">03-12 17:43:49.278 12809 12809 D hcy     : GrandView dispatchTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:43:49.278 12809 12809 D hcy     : GrandView onInterceptTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:43:49.278 12809 12809 D hcy     : ParentView dispatchTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:43:49.278 12809 12809 D hcy     : ParentView onTouch ACTION_UP</span><br><span class="line">03-12 17:43:49.278 12809 12809 D hcy     : ParentView onTouchEvent: ACTION_UP</span><br><span class="line">03-12 17:43:49.279 12809 12809 D hcy     : ParentView onClick</span><br></pre></td></tr></table></figure>
+<p>对比之前的log，DOWN的时候在SonView执行完onTouchEvent方法后，又执行了ParentView 的onTouch和onTouchEvent 方法，并且在UP的时候ParentView 不再执行onInterceptTouchEvent 方法，后面SonView不再接收UP事件。</p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>查看ViewGroup中的dispatchTouchEvent方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">    if (mInputEventConsistencyVerifier != null) &#123;</span><br><span class="line">        mInputEventConsistencyVerifier.onTouchEvent(ev, 1);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // If the event targets the accessibility focused view and this is it, start</span><br><span class="line">    // normal event dispatch. Maybe a descendant is what will handle the click.</span><br><span class="line">    if (ev.isTargetAccessibilityFocus() &amp;&amp; isAccessibilityFocusedViewOrHost()) &#123;</span><br><span class="line">        ev.setTargetAccessibilityFocus(false);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    boolean handled = false;</span><br><span class="line">    if (onFilterTouchEventForSecurity(ev)) &#123;</span><br><span class="line">        final int action = ev.getAction();</span><br><span class="line">        final int actionMasked = action &amp; MotionEvent.ACTION_MASK;</span><br><span class="line"></span><br><span class="line">        // Handle an initial down.</span><br><span class="line">        if (actionMasked == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">            // Throw away all previous state when starting a new touch gesture.</span><br><span class="line">            // The framework may have dropped the up or cancel event for the previous gesture</span><br><span class="line">            // due to an app switch, ANR, or some other state change.</span><br><span class="line">            cancelAndClearTouchTargets(ev);</span><br><span class="line">            resetTouchState();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // Check for interception.</span><br><span class="line">        final boolean intercepted;</span><br><span class="line">        if (actionMasked == MotionEvent.ACTION_DOWN</span><br><span class="line">                || mFirstTouchTarget != null) &#123;</span><br><span class="line">            final boolean disallowIntercept = (mGroupFlags &amp; FLAG_DISALLOW_INTERCEPT) != 0;</span><br><span class="line">            if (!disallowIntercept) &#123;</span><br><span class="line">                intercepted = onInterceptTouchEvent(ev);</span><br><span class="line">                ev.setAction(action); // restore action in case it was changed</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                intercepted = false;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            // There are no touch targets and this action is not an initial down</span><br><span class="line">            // so this view group continues to intercept touches.</span><br><span class="line">            intercepted = true;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // If intercepted, start normal event dispatch. Also if there is already</span><br><span class="line">        // a view that is handling the gesture, do normal event dispatch.</span><br><span class="line">        if (intercepted || mFirstTouchTarget != null) &#123;</span><br><span class="line">            ev.setTargetAccessibilityFocus(false);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // Check for cancelation.</span><br><span class="line">        final boolean canceled = resetCancelNextUpFlag(this)</span><br><span class="line">                || actionMasked == MotionEvent.ACTION_CANCEL;</span><br><span class="line"></span><br><span class="line">        // Update list of touch targets for pointer down, if needed.</span><br><span class="line">        final boolean split = (mGroupFlags &amp; FLAG_SPLIT_MOTION_EVENTS) != 0;</span><br><span class="line">        TouchTarget newTouchTarget = null;</span><br><span class="line">        boolean alreadyDispatchedToNewTouchTarget = false;</span><br><span class="line">        if (!canceled &amp;&amp; !intercepted) &#123;</span><br><span class="line"></span><br><span class="line">            // If the event is targeting accessiiblity focus we give it to the</span><br><span class="line">            // view that has accessibility focus and if it does not handle it</span><br><span class="line">            // we clear the flag and dispatch the event to all children as usual.</span><br><span class="line">            // We are looking up the accessibility focused host to avoid keeping</span><br><span class="line">            // state since these events are very rare.</span><br><span class="line">            View childWithAccessibilityFocus = ev.isTargetAccessibilityFocus()</span><br><span class="line">                    ? findChildWithAccessibilityFocus() : null;</span><br><span class="line"></span><br><span class="line">            if (actionMasked == MotionEvent.ACTION_DOWN</span><br><span class="line">                    || (split &amp;&amp; actionMasked == MotionEvent.ACTION_POINTER_DOWN)</span><br><span class="line">                    || actionMasked == MotionEvent.ACTION_HOVER_MOVE) &#123;</span><br><span class="line">                final int actionIndex = ev.getActionIndex(); // always 0 for down</span><br><span class="line">                final int idBitsToAssign = split ? 1 &lt;&lt; ev.getPointerId(actionIndex)</span><br><span class="line">                        : TouchTarget.ALL_POINTER_IDS;</span><br><span class="line"></span><br><span class="line">                // Clean up earlier touch targets for this pointer id in case they</span><br><span class="line">                // have become out of sync.</span><br><span class="line">                removePointersFromTouchTargets(idBitsToAssign);</span><br><span class="line"></span><br><span class="line">                final int childrenCount = mChildrenCount;</span><br><span class="line">                if (newTouchTarget == null &amp;&amp; childrenCount != 0) &#123;</span><br><span class="line">                    final float x = ev.getX(actionIndex);</span><br><span class="line">                    final float y = ev.getY(actionIndex);</span><br><span class="line">                    // Find a child that can receive the event.</span><br><span class="line">                    // Scan children from front to back.</span><br><span class="line">                    final ArrayList&lt;View&gt; preorderedList = buildTouchDispatchChildList();</span><br><span class="line">                    final boolean customOrder = preorderedList == null</span><br><span class="line">                            &amp;&amp; isChildrenDrawingOrderEnabled();</span><br><span class="line">                    final View[] children = mChildren;</span><br><span class="line">                    for (int i = childrenCount - 1; i &gt;= 0; i--) &#123;</span><br><span class="line">                        final int childIndex = getAndVerifyPreorderedIndex(</span><br><span class="line">                                childrenCount, i, customOrder);</span><br><span class="line">                        final View child = getAndVerifyPreorderedView(</span><br><span class="line">                                preorderedList, children, childIndex);</span><br><span class="line"></span><br><span class="line">                        // If there is a view that has accessibility focus we want it</span><br><span class="line">                        // to get the event first and if not handled we will perform a</span><br><span class="line">                        // normal dispatch. We may do a double iteration but this is</span><br><span class="line">                        // safer given the timeframe.</span><br><span class="line">                        if (childWithAccessibilityFocus != null) &#123;</span><br><span class="line">                            if (childWithAccessibilityFocus != child) &#123;</span><br><span class="line">                                continue;</span><br><span class="line">                            &#125;</span><br><span class="line">                            childWithAccessibilityFocus = null;</span><br><span class="line">                            i = childrenCount - 1;</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                        if (!canViewReceivePointerEvents(child)</span><br><span class="line">                                || !isTransformedTouchPointInView(x, y, child, null)) &#123;</span><br><span class="line">                            ev.setTargetAccessibilityFocus(false);</span><br><span class="line">                            continue;</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                        newTouchTarget = getTouchTarget(child);</span><br><span class="line">                        if (newTouchTarget != null) &#123;</span><br><span class="line">                            // Child is already receiving touch within its bounds.</span><br><span class="line">                            // Give it the new pointer in addition to the ones it is handling.</span><br><span class="line">                            newTouchTarget.pointerIdBits |= idBitsToAssign;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                        resetCancelNextUpFlag(child);</span><br><span class="line">                        if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign)) &#123;</span><br><span class="line">                            // Child wants to receive touch within its bounds.</span><br><span class="line">                            mLastTouchDownTime = ev.getDownTime();</span><br><span class="line">                            if (preorderedList != null) &#123;</span><br><span class="line">                                // childIndex points into presorted list, find original index</span><br><span class="line">                                for (int j = 0; j &lt; childrenCount; j++) &#123;</span><br><span class="line">                                    if (children[childIndex] == mChildren[j]) &#123;</span><br><span class="line">                                        mLastTouchDownIndex = j;</span><br><span class="line">                                        break;</span><br><span class="line">                                    &#125;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125; else &#123;</span><br><span class="line">                                mLastTouchDownIndex = childIndex;</span><br><span class="line">                            &#125;</span><br><span class="line">                            mLastTouchDownX = ev.getX();</span><br><span class="line">                            mLastTouchDownY = ev.getY();</span><br><span class="line">                            newTouchTarget = addTouchTarget(child, idBitsToAssign);</span><br><span class="line">                            alreadyDispatchedToNewTouchTarget = true;</span><br><span class="line">                            break;</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                        // The accessibility focus didn&apos;t handle the event, so clear</span><br><span class="line">                        // the flag and do a normal dispatch to all children.</span><br><span class="line">                        ev.setTargetAccessibilityFocus(false);</span><br><span class="line">                    &#125;</span><br><span class="line">                    if (preorderedList != null) preorderedList.clear();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                if (newTouchTarget == null &amp;&amp; mFirstTouchTarget != null) &#123;</span><br><span class="line">                    // Did not find a child to receive the event.</span><br><span class="line">                    // Assign the pointer to the least recently added target.</span><br><span class="line">                    newTouchTarget = mFirstTouchTarget;</span><br><span class="line">                    while (newTouchTarget.next != null) &#123;</span><br><span class="line">                        newTouchTarget = newTouchTarget.next;</span><br><span class="line">                    &#125;</span><br><span class="line">                    newTouchTarget.pointerIdBits |= idBitsToAssign;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // Dispatch to touch targets.</span><br><span class="line">        if (mFirstTouchTarget == null) &#123;</span><br><span class="line">            // No touch targets so treat this as an ordinary view.</span><br><span class="line">            handled = dispatchTransformedTouchEvent(ev, canceled, null,</span><br><span class="line">                    TouchTarget.ALL_POINTER_IDS);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            // Dispatch to touch targets, excluding the new touch target if we already</span><br><span class="line">            // dispatched to it.  Cancel touch targets if necessary.</span><br><span class="line">            TouchTarget predecessor = null;</span><br><span class="line">            TouchTarget target = mFirstTouchTarget;</span><br><span class="line">            while (target != null) &#123;</span><br><span class="line">                final TouchTarget next = target.next;</span><br><span class="line">                if (alreadyDispatchedToNewTouchTarget &amp;&amp; target == newTouchTarget) &#123;</span><br><span class="line">                    handled = true;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    final boolean cancelChild = resetCancelNextUpFlag(target.child)</span><br><span class="line">                            || intercepted;</span><br><span class="line">                    if (dispatchTransformedTouchEvent(ev, cancelChild,</span><br><span class="line">                            target.child, target.pointerIdBits)) &#123;</span><br><span class="line">                        handled = true;</span><br><span class="line">                    &#125;</span><br><span class="line">                    if (cancelChild) &#123;</span><br><span class="line">                        if (predecessor == null) &#123;</span><br><span class="line">                            mFirstTouchTarget = next;</span><br><span class="line">                        &#125; else &#123;</span><br><span class="line">                            predecessor.next = next;</span><br><span class="line">                        &#125;</span><br><span class="line">                        target.recycle();</span><br><span class="line">                        target = next;</span><br><span class="line">                        continue;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                predecessor = target;</span><br><span class="line">                target = next;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // Update list of touch targets for pointer up or cancel, if needed.</span><br><span class="line">        if (canceled</span><br><span class="line">                || actionMasked == MotionEvent.ACTION_UP</span><br><span class="line">                || actionMasked == MotionEvent.ACTION_HOVER_MOVE) &#123;</span><br><span class="line">            resetTouchState();</span><br><span class="line">        &#125; else if (split &amp;&amp; actionMasked == MotionEvent.ACTION_POINTER_UP) &#123;</span><br><span class="line">            final int actionIndex = ev.getActionIndex();</span><br><span class="line">            final int idBitsToRemove = 1 &lt;&lt; ev.getPointerId(actionIndex);</span><br><span class="line">            removePointersFromTouchTargets(idBitsToRemove);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (!handled &amp;&amp; mInputEventConsistencyVerifier != null) &#123;</span><br><span class="line">        mInputEventConsistencyVerifier.onUnhandledEvent(ev, 1);</span><br><span class="line">    &#125;</span><br><span class="line">    return handled;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从第13行开始看，定义了boolean的变量handled，该值就是dispatchTouchEvent方法的返回值，14行判断当前ViewGroup是否没被遮挡，获取当前的事件action，19-25行对于事件为DOWN做了特殊处理，调用cancelAndClearTouchTargets清除所有的触摸控件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Cancels and clears all touch targets.</span><br><span class="line"> */</span><br><span class="line">private void cancelAndClearTouchTargets(MotionEvent event) &#123;</span><br><span class="line">    if (mFirstTouchTarget != null) &#123;</span><br><span class="line">        boolean syntheticEvent = false;</span><br><span class="line">        if (event == null) &#123;</span><br><span class="line">            final long now = SystemClock.uptimeMillis();</span><br><span class="line">            event = MotionEvent.obtain(now, now,</span><br><span class="line">                    MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);</span><br><span class="line">            event.setSource(InputDevice.SOURCE_TOUCHSCREEN);</span><br><span class="line">            syntheticEvent = true;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        for (TouchTarget target = mFirstTouchTarget; target != null; target = target.next) &#123;</span><br><span class="line">            resetCancelNextUpFlag(target.child);</span><br><span class="line">            dispatchTransformedTouchEvent(event, true, target.child, target.pointerIdBits);</span><br><span class="line">        &#125;</span><br><span class="line">        clearTouchTargets();</span><br><span class="line"></span><br><span class="line">        if (syntheticEvent) &#123;</span><br><span class="line">            event.recycle();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个很重要的变量mFirstTouchTarget ，只有该实例不为空的情况下才会执行后续的操作，我们假设这里的DOWN事件是有史以来第一次，那么mFirstTouchTarget 声明后并没有赋值，因此为null，就不存在后面的一系列清除操作，同样resetTouchState方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Resets all touch state in preparation for a new cycle.</span><br><span class="line"> */</span><br><span class="line">private void resetTouchState() &#123;</span><br><span class="line">    clearTouchTargets();</span><br><span class="line">    resetCancelNextUpFlag(this);</span><br><span class="line">    mGroupFlags &amp;= ~FLAG_DISALLOW_INTERCEPT;</span><br><span class="line">    mNestedScrollAxes = SCROLL_AXIS_NONE;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Clears all touch targets.</span><br><span class="line"> */</span><br><span class="line">private void clearTouchTargets() &#123;</span><br><span class="line">    TouchTarget target = mFirstTouchTarget;</span><br><span class="line">    if (target != null) &#123;</span><br><span class="line">        do &#123;</span><br><span class="line">            TouchTarget next = target.next;</span><br><span class="line">            target.recycle();</span><br><span class="line">            target = next;</span><br><span class="line">        &#125; while (target != null);</span><br><span class="line">        mFirstTouchTarget = null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>都是因为mFirstTouchTarget为null所以不会执行，可能存在之前发生ANR等导致触摸事件未清除的情况，因此19-25行对于DOWN的操作只是确保了mFirstTouchTarget为null，为后续的操作奠定基础。</p>
+<p>28-42行判断是否拦截事件取决于boolean值intercepted，如果事件为DOWN或者mFirstTouchTarget！=null，获取一个boolean的值disallowIntercept，这里的默认值为false，所以intercepted的值由onInterceptTouchEvent(ev)方法的返回值决定：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public boolean onInterceptTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到该方法默认返回false，即不拦截，如果是其他事件，并且mFirstTouchTarget为null，那这里的intercepted就为true。这块代码解释了例子1中的执行完dispatchTouchEvent之后马上执行onInterceptTouchEvent的原因，而例子2中UP时不执行onInterceptTouchEvent在这里看来很有可能是mFirstTouchTarget == null引起的，带着问题继续往下看。</p>
+<p>51-52行判断是否为cancel<br>55行获取boolean值split默认为true，判断是否分发给子View<br>58行if (!canceled &amp;&amp; !intercepted)判断如果不是cancle事件，且ViewGroup不拦截成立，进入内部<br>68-70行开始对于DOWN事件进行的处理，首先在85行通过buildTouchDispatchChildList方法获取一个子View集合的preorderedList，89行倒序遍历子View，113行通过getTouchTarget方法判断是否找到子View在target链上</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Gets the touch target for specified child view.</span><br><span class="line"> * Returns null if not found.</span><br><span class="line"> */</span><br><span class="line">private TouchTarget getTouchTarget(@NonNull View child) &#123;</span><br><span class="line">    for (TouchTarget target = mFirstTouchTarget; target != null; target = target.next) &#123;</span><br><span class="line">        if (target.child == child) &#123;</span><br><span class="line">            return target;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果匹配，则说明找到接收该事件的子View，执行114-119行代码跳出循环，这里我们仍然假设是有史以来的第一次DOWN事件，mFirstTouchTarget为null，因此不匹配，返回null，执行122行的if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign)) 判断<br>dispatchTransformedTouchEvent方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"> /**</span><br><span class="line"> * Transforms a motion event into the coordinate space of a particular child view,</span><br><span class="line"> * filters out irrelevant pointer ids, and overrides its action if necessary.</span><br><span class="line"> * If child is null, assumes the MotionEvent will be sent to this ViewGroup instead.</span><br><span class="line"> */</span><br><span class="line">private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,</span><br><span class="line">        View child, int desiredPointerIdBits) &#123;</span><br><span class="line">    final boolean handled;</span><br><span class="line"></span><br><span class="line">    // Canceling motions is a special case.  We don&apos;t need to perform any transformations</span><br><span class="line">    // or filtering.  The important part is the action, not the contents.</span><br><span class="line">    final int oldAction = event.getAction();</span><br><span class="line">    if (cancel || oldAction == MotionEvent.ACTION_CANCEL) &#123;</span><br><span class="line">        event.setAction(MotionEvent.ACTION_CANCEL);</span><br><span class="line">        if (child == null) &#123;</span><br><span class="line">            handled = super.dispatchTouchEvent(event);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            handled = child.dispatchTouchEvent(event);</span><br><span class="line">        &#125;</span><br><span class="line">        event.setAction(oldAction);</span><br><span class="line">        return handled;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Calculate the number of pointers to deliver.</span><br><span class="line">    final int oldPointerIdBits = event.getPointerIdBits();</span><br><span class="line">    final int newPointerIdBits = oldPointerIdBits &amp; desiredPointerIdBits;</span><br><span class="line"></span><br><span class="line">    // If for some reason we ended up in an inconsistent state where it looks like we</span><br><span class="line">    // might produce a motion event with no pointers in it, then drop the event.</span><br><span class="line">    if (newPointerIdBits == 0) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // If the number of pointers is the same and we don&apos;t need to perform any fancy</span><br><span class="line">    // irreversible transformations, then we can reuse the motion event for this</span><br><span class="line">    // dispatch as long as we are careful to revert any changes we make.</span><br><span class="line">    // Otherwise we need to make a copy.</span><br><span class="line">    final MotionEvent transformedEvent;</span><br><span class="line">    if (newPointerIdBits == oldPointerIdBits) &#123;</span><br><span class="line">        if (child == null || child.hasIdentityMatrix()) &#123;</span><br><span class="line">            if (child == null) &#123;</span><br><span class="line">                handled = super.dispatchTouchEvent(event);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                final float offsetX = mScrollX - child.mLeft;</span><br><span class="line">                final float offsetY = mScrollY - child.mTop;</span><br><span class="line">                event.offsetLocation(offsetX, offsetY);</span><br><span class="line"></span><br><span class="line">                handled = child.dispatchTouchEvent(event);</span><br><span class="line"></span><br><span class="line">                event.offsetLocation(-offsetX, -offsetY);</span><br><span class="line">            &#125;</span><br><span class="line">            return handled;</span><br><span class="line">        &#125;</span><br><span class="line">        transformedEvent = MotionEvent.obtain(event);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        transformedEvent = event.split(newPointerIdBits);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Perform any necessary transformations and dispatch.</span><br><span class="line">    if (child == null) &#123;</span><br><span class="line">        handled = super.dispatchTouchEvent(transformedEvent);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        final float offsetX = mScrollX - child.mLeft;</span><br><span class="line">        final float offsetY = mScrollY - child.mTop;</span><br><span class="line">        transformedEvent.offsetLocation(offsetX, offsetY);</span><br><span class="line">        if (! child.hasIdentityMatrix()) &#123;</span><br><span class="line">            transformedEvent.transform(child.getInverseMatrix());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        handled = child.dispatchTouchEvent(transformedEvent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Done.</span><br><span class="line">    transformedEvent.recycle();</span><br><span class="line">    return handled;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据注解大概分析，如果这里的child为null，事件会交给ViewGroup处理。该方法的第三个参数为空则调用super.dispatchTouchEvent(event)，不为空则调用child.dispatchTouchEvent(event);如果子View是个ViewGroup并且未对Touch事件拦截(onInterceptTouchEvent方法为false)，则递归调用dispatchTouchEvent；如果子View是个View，就调用其onTouchEvent()方法。最后，如果dispatchTransformedTouchEvent返回true，说明子View消费了该事件，122-141行中将addTouchTarget方法的返回值赋给newTouchTarget，将alreadyDispatchedToNewTouchTarget标志位置为true，同时跳出循环，查看addTouchTarget方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">private TouchTarget addTouchTarget(@NonNull View child, int pointerIdBits) &#123;</span><br><span class="line">    final TouchTarget target = TouchTarget.obtain(child, pointerIdBits);</span><br><span class="line">    target.next = mFirstTouchTarget;</span><br><span class="line">    mFirstTouchTarget = target;</span><br><span class="line">    return target;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>找了一圈终于看到在这里对mFirstTouchTarget 进行赋值了。<br>如果这里的if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign))判断为false，说明子View的未消费该事件，就不会执行addTouchTarget给mFirstTouchTarget 赋值，这就是例子2中UP的时候ParentView的onInterceptTouchEvent方法不执行的原因。</p>
+<p>163行判断mFirstTouchTarget 是否为null，<br>如果当前事件为DOWN，在122行判断中返回false，即子View不消费事件，那么mFirstTouchTarget 未赋值为null成立，也就是例子2的情况，调用dispatchTransformedTouchEvent方法，第三个参数传入null，此时对于ParentView而言，会执行super.dispatchTouchEvent(event)，也就是View的dispatchTouchEvent方法，又因为ParentView复写了onTouch和onTouchEvent方法，所以看到log中打出了ParentView这两个方法的打印。之后UP事件过来，前面29-30行的判断都不满足，所以ParentView的onInterceptTouchEvent方法不执行，41行对intercepted赋值为true，即拦截事件，那么从58-160都不满足了，回到163行，同理执行super.dispatchTouchEvent(event)。</p>
+<p>如果mFirstTouchTarget不为null，174行有个判断，之前DOWN事件时alreadyDispatchedToNewTouchTarget置为true，并且也给newTouchTarget赋值为target，这里判断成立，handled返回true说明已经处理了DOWN事件。对于MOVE或者UP事件，会走到179-182行中，同样是调用dispatchTransformedTouchEvent，handled值返回true。<br>203行对于UP执行完后调用resetTouchState()方法清除触摸状态，将mFirstTouchTarget 再次置为null，算是收尾工作。</p>
+<h2 id="缩减版"><a href="#缩减版" class="headerlink" title="缩减版"></a>缩减版</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</span><br><span class="line">    //如果是DOWN，确保mFirstTouchTarget 为null</span><br><span class="line">    if (actionMasked == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">        mFirstTouchTarget == null;</span><br><span class="line">    &#125;</span><br><span class="line">    //判断是否拦截</span><br><span class="line">    final boolean intercepted;</span><br><span class="line">    if (actionMasked == MotionEvent.ACTION_DOWN</span><br><span class="line">            || mFirstTouchTarget != null) &#123;</span><br><span class="line">        //Down或者mFirstTouchTarget!=null时将onInterceptTouchEvent值赋给intercepted，默认为false</span><br><span class="line">        intercepted = onInterceptTouchEvent(ev);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        //除了Down,如果mFirstTouchTarget为null,则拦截</span><br><span class="line">        intercepted = true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    //不拦截的情况下</span><br><span class="line">    if(!intercepted)&#123;</span><br><span class="line">        if(actionMasked == MotionEvent.ACTION_DOWN)&#123;</span><br><span class="line">            //如果是Down，判断子View是否消费</span><br><span class="line">            if(dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign))&#123;</span><br><span class="line">                //如果子Viwe消费,给mFirstTouchTarget赋值</span><br><span class="line">                mFirstTouchTarget = target</span><br><span class="line">            &#125;else&#123;</span><br><span class="line">                //如果子Viwe不消费mFirstTouchTarget未赋值仍为null</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if(mFirstTouchTarget == null)&#123;</span><br><span class="line">        //子View不消费，调用自身的super.dispatchTouchEvent(event)</span><br><span class="line">        handled = dispatchTransformedTouchEvent(ev, canceled, null,</span><br><span class="line">                    TouchTarget.ALL_POINTER_IDS);</span><br><span class="line">    &#125;else&#123;</span><br><span class="line">        //子View消费，递归调用child.dispatchTouchEvent(event)分发事件给具体的View</span><br><span class="line">        handled = dispatchTransformedTouchEvent(ev, cancelChild,target.child,</span><br><span class="line">                    target.pointerIdBits);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return handled;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>1.Android的事件分发是先通过最外层的ViewGroup再传递到内部具体的View<br>2.如果ViewGroup的onInterceptTouchEvent返回false，接收到DOWN事件处理完成，之后的MOVE,UP等事件会继续先传递给该ViewGroup，再传递给目标View的onTouchEvent处理。如果ViewGroup的onInterceptTouchEvent返回true，那么接收到DOWN事件处理完成，之后的MOVE,UP等事件只会传递给该ViewGroup的onTouchEvent()处理，目标View接收不到任何事件；<br>3.如果最终需要处理事件的view的onTouchEvent()返回了false，那么该事件将被传递至其上一层次的view的onTouchEvent()处理；<br>4.如果最终需要处理事件的view 的onTouchEvent()返回了true，那么后续事件将可以继续传递给该view的onTouchEvent()处理。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/20/Android View事件分发机制/" rel="next" title="Android View事件分发机制">
+                <i class="fa fa-chevron-left"></i> Android View事件分发机制
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/28/Android Activity事件分发机制/" rel="prev" title="Android Activity事件分发机制">
+                Android Activity事件分发机制 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#例子1"><span class="nav-number">2.</span> <span class="nav-text">例子1</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#例子2"><span class="nav-number">3.</span> <span class="nav-text">例子2</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#源码分析"><span class="nav-number">4.</span> <span class="nav-text">源码分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#缩减版"><span class="nav-number">5.</span> <span class="nav-text">缩减版</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

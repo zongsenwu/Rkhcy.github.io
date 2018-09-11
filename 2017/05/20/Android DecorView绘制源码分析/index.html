@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述通过前面的分析，在Activity中执行setContentView方法后会执行PhoneWindow的setContentView，在该方法中会生成DecorView 组件作为应用窗口的顶层视图，DecorView 是PhoneWindow的内部类，继承至FrameLayout，DecorView 会添加一个id为content的FrameLayout作为根布局，Activity的xml文件">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android DecorView绘制源码分析">
+<meta property="og:url" content="http://yoursite.com/2017/05/20/Android DecorView绘制源码分析/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述通过前面的分析，在Activity中执行setContentView方法后会执行PhoneWindow的setContentView，在该方法中会生成DecorView 组件作为应用窗口的顶层视图，DecorView 是PhoneWindow的内部类，继承至FrameLayout，DecorView 会添加一个id为content的FrameLayout作为根布局，Activity的xml文件">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/DecorView.png">
+<meta property="og:updated_time" content="2017-10-12T07:31:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android DecorView绘制源码分析">
+<meta name="twitter:description" content="概述通过前面的分析，在Activity中执行setContentView方法后会执行PhoneWindow的setContentView，在该方法中会生成DecorView 组件作为应用窗口的顶层视图，DecorView 是PhoneWindow的内部类，继承至FrameLayout，DecorView 会添加一个id为content的FrameLayout作为根布局，Activity的xml文件">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/DecorView.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/05/20/Android DecorView绘制源码分析/"/>
+
+
+
+
+
+  <title>Android DecorView绘制源码分析 | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/05/20/Android DecorView绘制源码分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android DecorView绘制源码分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-20T00:00:00+08:00">
+                2017-05-20
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/05/20/Android DecorView绘制源码分析/" class="leancloud_visitors" data-flag-title="Android DecorView绘制源码分析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>通过前面的分析，在Activity中执行setContentView方法后会执行PhoneWindow的setContentView，在该方法中会生成DecorView 组件作为应用窗口的顶层视图，DecorView 是PhoneWindow的内部类，继承至FrameLayout，DecorView 会添加一个id为content的FrameLayout作为根布局，Activity的xml文件通过LayoutInflater的inflate方法解析成View树添加到id为content的FrameLayout中，那么这里的DecorView是怎么被添加到窗口并显示出来的呢？</p>
+<a id="more"></a>
+<h2 id="ActivityThread-handleResumeActivity"><a href="#ActivityThread-handleResumeActivity" class="headerlink" title="ActivityThread handleResumeActivity()"></a>ActivityThread handleResumeActivity()</h2><p>Activity的启动流程学习作为将来的TODO项目，在ActivityThread中，当activity对象被创建完毕后，会调用handleResumeActivity方法将顶层视图DecorView添加到PhoneWindow窗口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br></pre></td><td class="code"><pre><span class="line">源码路径：SDK/sources/android-24/android/app/ActivityThread.java</span><br><span class="line">    final void handleResumeActivity(IBinder token,</span><br><span class="line">            boolean clearHide, boolean isForward, boolean reallyResume, int seq, String reason) &#123;</span><br><span class="line">        //ActivityClientRecord对象保存了Activity的信息</span><br><span class="line">        ActivityClientRecord r = mActivities.get(token);</span><br><span class="line">        if (!checkAndUpdateLifecycleSeq(seq, r, &quot;resumeActivity&quot;)) &#123;</span><br><span class="line">            return;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // If we are getting ready to gc after going to the background, well</span><br><span class="line">        // we are back active so skip it.</span><br><span class="line">        unscheduleGcIdler();</span><br><span class="line">        mSomeActivitiesChanged = true;</span><br><span class="line"></span><br><span class="line">        // TODO Push resumeArgs into the activity for consideration</span><br><span class="line">        r = performResumeActivity(token, clearHide, reason);</span><br><span class="line"></span><br><span class="line">        if (r != null) &#123;</span><br><span class="line">            //获取Activity对象</span><br><span class="line">            final Activity a = r.activity;</span><br><span class="line"></span><br><span class="line">            final int forwardBit = isForward ?</span><br><span class="line">                    WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION : 0;</span><br><span class="line"></span><br><span class="line">            // If the window hasn&apos;t yet been added to the window manager,</span><br><span class="line">            // and this guy didn&apos;t finish itself or start another activity,</span><br><span class="line">            // then go ahead and add the window.</span><br><span class="line">            boolean willBeVisible = !a.mStartedActivity;</span><br><span class="line">            if (!willBeVisible) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    willBeVisible = ActivityManagerNative.getDefault().willActivityBeVisible(</span><br><span class="line">                            a.getActivityToken());</span><br><span class="line">                &#125; catch (RemoteException e) &#123;</span><br><span class="line">                    throw e.rethrowFromSystemServer();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            if (r.window == null &amp;&amp; !a.mFinished &amp;&amp; willBeVisible) &#123;</span><br><span class="line">                //获取Activity对应的PhoneWindow对象</span><br><span class="line">                r.window = r.activity.getWindow();</span><br><span class="line">                //获取顶层布局DecorView对象</span><br><span class="line">                View decor = r.window.getDecorView();</span><br><span class="line">                //设为不可见</span><br><span class="line">                decor.setVisibility(View.INVISIBLE);</span><br><span class="line">                //获取WindowManager</span><br><span class="line">                ViewManager wm = a.getWindowManager();</span><br><span class="line">                //获取PhoneWindow的LayoutParams</span><br><span class="line">                WindowManager.LayoutParams l = r.window.getAttributes();</span><br><span class="line">                a.mDecor = decor;</span><br><span class="line">                l.type = WindowManager.LayoutParams.TYPE_BASE_APPLICATION;</span><br><span class="line">                l.softInputMode |= forwardBit;</span><br><span class="line">                if (r.mPreserveWindow) &#123;</span><br><span class="line">                    a.mWindowAdded = true;</span><br><span class="line">                    r.mPreserveWindow = false;</span><br><span class="line">                    // Normally the ViewRoot sets up callbacks with the Activity</span><br><span class="line">                    // in addView-&gt;ViewRootImpl#setView. If we are instead reusing</span><br><span class="line">                    // the decor view we have to notify the view root that the</span><br><span class="line">                    // callbacks may have changed.</span><br><span class="line">                    ViewRootImpl impl = decor.getViewRootImpl();</span><br><span class="line">                    if (impl != null) &#123;</span><br><span class="line">                        impl.notifyChildRebuilt();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                if (a.mVisibleFromClient &amp;&amp; !a.mWindowAdded) &#123;</span><br><span class="line">                    //DecorView已经添加到窗口</span><br><span class="line">                    a.mWindowAdded = true;</span><br><span class="line">                    //将顶层布局DecorView添加到窗口中</span><br><span class="line">                    wm.addView(decor, l);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            // If the window has already been added, but during resume</span><br><span class="line">            // we started another activity, then don&apos;t yet make the</span><br><span class="line">            // window visible.</span><br><span class="line">            &#125; else if (!willBeVisible) &#123;</span><br><span class="line">                r.hideForNow = true;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            // Get rid of anything left hanging around.</span><br><span class="line">            cleanUpPendingRemoveWindows(r, false /* force */);</span><br><span class="line"></span><br><span class="line">            // The window is now visible if it has been added, we are not</span><br><span class="line">            // simply finishing, and we are not starting another activity.</span><br><span class="line">            if (!r.activity.mFinished &amp;&amp; willBeVisible</span><br><span class="line">                    &amp;&amp; r.activity.mDecor != null &amp;&amp; !r.hideForNow) &#123;</span><br><span class="line">                if (r.newConfig != null) &#123;</span><br><span class="line">                    performConfigurationChangedForActivity(r, r.newConfig, REPORT_TO_ACTIVITY);</span><br><span class="line">                    r.newConfig = null;</span><br><span class="line">                &#125;</span><br><span class="line">                WindowManager.LayoutParams l = r.window.getAttributes();</span><br><span class="line">                if ((l.softInputMode</span><br><span class="line">                        &amp; WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION)</span><br><span class="line">                        != forwardBit) &#123;</span><br><span class="line">                    l.softInputMode = (l.softInputMode</span><br><span class="line">                            &amp; (~WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION))</span><br><span class="line">                            | forwardBit;</span><br><span class="line">                    if (r.activity.mVisibleFromClient) &#123;</span><br><span class="line">                        ViewManager wm = a.getWindowManager();</span><br><span class="line">                        View decor = r.window.getDecorView();</span><br><span class="line">                        wm.updateViewLayout(decor, l);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                r.activity.mVisibleFromServer = true;</span><br><span class="line">                mNumVisibleActivities++;</span><br><span class="line">                if (r.activity.mVisibleFromClient) &#123;</span><br><span class="line">                    //设置顶层布局DecorView可见</span><br><span class="line">                    r.activity.makeVisible();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (!r.onlyLocalRequest) &#123;</span><br><span class="line">                r.nextIdle = mNewActivities;</span><br><span class="line">                mNewActivities = r;</span><br><span class="line">                Looper.myQueue().addIdleHandler(new Idler());</span><br><span class="line">            &#125;</span><br><span class="line">            r.onlyLocalRequest = false;</span><br><span class="line"></span><br><span class="line">            // Tell the activity manager we have resumed.</span><br><span class="line">            if (reallyResume) &#123;</span><br><span class="line">                try &#123;</span><br><span class="line">                    ActivityManagerNative.getDefault().activityResumed(token);</span><br><span class="line">                &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                    throw ex.rethrowFromSystemServer();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            // If an exception was thrown when trying to resume, then</span><br><span class="line">            // just end this activity.</span><br><span class="line">            try &#123;</span><br><span class="line">                ActivityManagerNative.getDefault()</span><br><span class="line">                    .finishActivity(token, Activity.RESULT_CANCELED, null,</span><br><span class="line">                            Activity.DONT_FINISH_TASK_WITH_ACTIVITY);</span><br><span class="line">            &#125; catch (RemoteException ex) &#123;</span><br><span class="line">                throw ex.rethrowFromSystemServer();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="WindowManagerImpl-addView"><a href="#WindowManagerImpl-addView" class="headerlink" title="WindowManagerImpl addView()"></a>WindowManagerImpl addView()</h2><p>通过wm的addView方法，传入顶层视图DecorView和LayoutParams，将顶层布局DecorView添加到窗口中。这里的vm是ViewManager，具体实现是WindowManagerImpl类</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">关系:</span><br><span class="line">public interface WindowManager extends ViewManager </span><br><span class="line">public final class WindowManagerImpl implements WindowManager</span><br><span class="line"></span><br><span class="line">源码路径: SDK/sources/android-24/android/view/WindowManagerImpl.java</span><br><span class="line">    public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) &#123;</span><br><span class="line">        applyDefaultToken(params);</span><br><span class="line">        mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里直接调用了mGlobal的addView方法，继续跟进去看下</p>
+<h2 id="WindowManagerGlobal-addView"><a href="#WindowManagerGlobal-addView" class="headerlink" title="WindowManagerGlobal addView()"></a>WindowManagerGlobal addView()</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line">源码路径: SDK/sources/android-24/android/view/WindowManagerGlobal.java</span><br><span class="line"></span><br><span class="line">    public void addView(View view, ViewGroup.LayoutParams params,</span><br><span class="line">            Display display, Window parentWindow) &#123;</span><br><span class="line"></span><br><span class="line">        final WindowManager.LayoutParams wparams = (WindowManager.LayoutParams) params;</span><br><span class="line">        if (parentWindow != null) &#123;</span><br><span class="line">            parentWindow.adjustLayoutParamsForSubWindow(wparams);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            // If there&apos;s no parent, then hardware acceleration for this view is</span><br><span class="line">            // set from the application&apos;s hardware acceleration setting.</span><br><span class="line">            final Context context = view.getContext();</span><br><span class="line">            if (context != null</span><br><span class="line">                    &amp;&amp; (context.getApplicationInfo().flags</span><br><span class="line">                            &amp; ApplicationInfo.FLAG_HARDWARE_ACCELERATED) != 0) &#123;</span><br><span class="line">                wparams.flags |= WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ViewRootImpl root;</span><br><span class="line">        View panelParentView = null;</span><br><span class="line"></span><br><span class="line">        synchronized (mLock) &#123;</span><br><span class="line">            // Start watching for system property changes.</span><br><span class="line">            if (mSystemPropertyUpdater == null) &#123;</span><br><span class="line">                mSystemPropertyUpdater = new Runnable() &#123;</span><br><span class="line">                    @Override public void run() &#123;</span><br><span class="line">                        synchronized (mLock) &#123;</span><br><span class="line">                            for (int i = mRoots.size() - 1; i &gt;= 0; --i) &#123;</span><br><span class="line">                                mRoots.get(i).loadSystemProperties();</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;;</span><br><span class="line">                SystemProperties.addChangeCallback(mSystemPropertyUpdater);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            int index = findViewLocked(view, false);</span><br><span class="line">            if (index &gt;= 0) &#123;</span><br><span class="line">                if (mDyingViews.contains(view)) &#123;</span><br><span class="line">                    // Don&apos;t wait for MSG_DIE to make it&apos;s way through root&apos;s queue.</span><br><span class="line">                    mRoots.get(index).doDie();</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    throw new IllegalStateException(&quot;View &quot; + view</span><br><span class="line">                            + &quot; has already been added to the window manager.&quot;);</span><br><span class="line">                &#125;</span><br><span class="line">                // The previous removeView() had not completed executing. Now it has.</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            // If this is a panel window, then find the window it is being</span><br><span class="line">            // attached to for future reference.</span><br><span class="line">            if (wparams.type &gt;= WindowManager.LayoutParams.FIRST_SUB_WINDOW &amp;&amp;</span><br><span class="line">                    wparams.type &lt;= WindowManager.LayoutParams.LAST_SUB_WINDOW) &#123;</span><br><span class="line">                final int count = mViews.size();</span><br><span class="line">                for (int i = 0; i &lt; count; i++) &#123;</span><br><span class="line">                    if (mRoots.get(i).mWindow.asBinder() == wparams.token) &#123;</span><br><span class="line">                        panelParentView = mViews.get(i);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            //实例化ViewRootImpl对象</span><br><span class="line">            root = new ViewRootImpl(view.getContext(), display);</span><br><span class="line">            //顶层视图DecorView设置LayoutParams</span><br><span class="line">            view.setLayoutParams(wparams);</span><br><span class="line"></span><br><span class="line">            mViews.add(view);</span><br><span class="line">            mRoots.add(root);</span><br><span class="line">            mParams.add(wparams);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // do this last because it fires off messages to start doing things</span><br><span class="line">        try &#123;</span><br><span class="line">            //将顶层视图DecorView添加到root中</span><br><span class="line">            root.setView(view, wparams, panelParentView);</span><br><span class="line">        &#125; catch (RuntimeException e) &#123;</span><br><span class="line">            // BadTokenException or InvalidDisplayException, clean up.</span><br><span class="line">            synchronized (mLock) &#123;</span><br><span class="line">                final int index = findViewLocked(view, false);</span><br><span class="line">                if (index &gt;= 0) &#123;</span><br><span class="line">                    removeViewLocked(index, true);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            throw e;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="ViewRootImpl-setView"><a href="#ViewRootImpl-setView" class="headerlink" title="ViewRootImpl setView()"></a>ViewRootImpl setView()</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">源码路径: SDK/sources/android-24/android/view/ViewRootImpl.java</span><br><span class="line">    /**</span><br><span class="line">     * We have one child</span><br><span class="line">     */</span><br><span class="line">        public void setView(View view, WindowManager.LayoutParams attrs, View panelParentView) &#123;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            if (mView == null) &#123;</span><br><span class="line">                mView = view;</span><br><span class="line">                ......</span><br><span class="line">                mAdded = true;</span><br><span class="line">                ......</span><br><span class="line">                // Schedule the first layout -before- adding to the window</span><br><span class="line">                // manager, to make sure we do the relayout before receiving</span><br><span class="line">                // any other events from the system.</span><br><span class="line">                requestLayout();</span><br><span class="line">                ......</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>该方法代码有点长，将DecorView赋给这里的View，并标记DecorView已添加到ViewRootImpl，之后调用requestLayout请求布局。</p>
+<h2 id="ViewRootImpl-requestLayout"><a href="#ViewRootImpl-requestLayout" class="headerlink" title="ViewRootImpl requestLayout()"></a>ViewRootImpl requestLayout()</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public void requestLayout() &#123;</span><br><span class="line">    if (!mHandlingLayoutInLayoutRequest) &#123;</span><br><span class="line">        checkThread();</span><br><span class="line">        mLayoutRequested = true;</span><br><span class="line">        scheduleTraversals();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="ViewRootImpl-scheduleTraversals"><a href="#ViewRootImpl-scheduleTraversals" class="headerlink" title="ViewRootImpl scheduleTraversals()"></a>ViewRootImpl scheduleTraversals()</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">void scheduleTraversals() &#123;</span><br><span class="line">    if (!mTraversalScheduled) &#123;</span><br><span class="line">        mTraversalScheduled = true;</span><br><span class="line">        mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();</span><br><span class="line">        mChoreographer.postCallback(</span><br><span class="line">                Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);</span><br><span class="line">        if (!mUnbufferedInputDispatch) &#123;</span><br><span class="line">            scheduleConsumeBatchedInput();</span><br><span class="line">        &#125;</span><br><span class="line">        notifyRendererOfFramePending();</span><br><span class="line">        pokeDrawLockIfNeeded();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在该方法中把mTraversalRunnable post到消息队列中，查看Choreographer的postCallback方法，最终会调用到postCallbackDelayedInternal，实质还是通过Handler来处理，查看下mTraversalRunnable 做了什么</p>
+<h2 id="ViewRootImpl-TraversalRunnable"><a href="#ViewRootImpl-TraversalRunnable" class="headerlink" title="ViewRootImpl TraversalRunnable"></a>ViewRootImpl TraversalRunnable</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">final class TraversalRunnable implements Runnable &#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void run() &#123;</span><br><span class="line">        doTraversal();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="ViewRootImpl-doTraversal"><a href="#ViewRootImpl-doTraversal" class="headerlink" title="ViewRootImpl doTraversal()"></a>ViewRootImpl doTraversal()</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">void doTraversal() &#123;</span><br><span class="line">    if (mTraversalScheduled) &#123;</span><br><span class="line">        mTraversalScheduled = false;</span><br><span class="line">        mHandler.getLooper().getQueue().removeSyncBarrier(mTraversalBarrier);</span><br><span class="line"></span><br><span class="line">        if (mProfile) &#123;</span><br><span class="line">            Debug.startMethodTracing(&quot;ViewAncestor&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        performTraversals();</span><br><span class="line"></span><br><span class="line">        if (mProfile) &#123;</span><br><span class="line">            Debug.stopMethodTracing();</span><br><span class="line">            mProfile = false;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里会调用performTraversals()，performTraversals()负责整个View树的绘制流程，是很关键的一步，之后结合自定义View分析。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>通过上面的分析，在ActivityThread中，当activity对象创建完毕后，会将DecorView添加到Window中，同时会创建 ViewRootImpl 对象，并将 ViewRootImpl 对象和 DecorView 建立关联，最终由ViewRootImpl负责整个View树的绘制。</p>
+<p><a href="http://7xjvg5.com1.z0.glb.clouddn.com/DecorView.png" target="_blank" rel="noopener"><img src="http://7xjvg5.com1.z0.glb.clouddn.com/DecorView.png" alt="img"></a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/17/Android LayoutInflater源码分析/" rel="next" title="Android LayoutInflater源码分析">
+                <i class="fa fa-chevron-left"></i> Android LayoutInflater源码分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/24/Screen Overlay Detected介绍与解决/" rel="prev" title="Screen Overlay Detected介绍与解决">
+                Screen Overlay Detected介绍与解决 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ActivityThread-handleResumeActivity"><span class="nav-number">2.</span> <span class="nav-text">ActivityThread handleResumeActivity()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WindowManagerImpl-addView"><span class="nav-number">3.</span> <span class="nav-text">WindowManagerImpl addView()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#WindowManagerGlobal-addView"><span class="nav-number">4.</span> <span class="nav-text">WindowManagerGlobal addView()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-setView"><span class="nav-number">5.</span> <span class="nav-text">ViewRootImpl setView()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-requestLayout"><span class="nav-number">6.</span> <span class="nav-text">ViewRootImpl requestLayout()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-scheduleTraversals"><span class="nav-number">7.</span> <span class="nav-text">ViewRootImpl scheduleTraversals()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-TraversalRunnable"><span class="nav-number">8.</span> <span class="nav-text">ViewRootImpl TraversalRunnable</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-doTraversal"><span class="nav-number">9.</span> <span class="nav-text">ViewRootImpl doTraversal()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">10.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

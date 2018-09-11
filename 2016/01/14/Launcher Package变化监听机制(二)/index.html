@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上一篇介绍了当安装应用的时候在桌面和菜单中生成图标的流程,但还是没有找到源头.那么就在源码中继续寻找答案.">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Launcher Package变化监听机制(二)">
+<meta property="og:url" content="http://yoursite.com/2016/01/14/Launcher Package变化监听机制(二)/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="上一篇介绍了当安装应用的时候在桌面和菜单中生成图标的流程,但还是没有找到源头.那么就在源码中继续寻找答案.">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-12T07:28:37.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Launcher Package变化监听机制(二)">
+<meta name="twitter:description" content="上一篇介绍了当安装应用的时候在桌面和菜单中生成图标的流程,但还是没有找到源头.那么就在源码中继续寻找答案.">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/01/14/Launcher Package变化监听机制(二)/"/>
+
+
+
+
+
+  <title>Launcher Package变化监听机制(二) | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/01/14/Launcher Package变化监听机制(二)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Launcher Package变化监听机制(二)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-01-14T00:00:00+08:00">
+                2016-01-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2016/01/14/Launcher Package变化监听机制(二)/" class="leancloud_visitors" data-flag-title="Launcher Package变化监听机制(二)">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>上一篇介绍了当安装应用的时候在桌面和菜单中生成图标的流程,但还是没有找到源头.那么就在源码中继续寻找答案.</p>
+<a id="more"></a>
+<p>LauncherModel实现了LauncherAppsCompat.OnAppsChangedCallbackCompat</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">code path: android/packages/apps/Launcher3/src/com/android/launcher3/compat/LauncherAppsCompat.java</span><br><span class="line"></span><br><span class="line">    public interface OnAppsChangedCallbackCompat &#123;</span><br><span class="line">        void onPackageRemoved(String packageName, UserHandleCompat user);</span><br><span class="line">        void onPackageAdded(String packageName, UserHandleCompat user);</span><br><span class="line">        void onPackageChanged(String packageName, UserHandleCompat user);</span><br><span class="line">        void onPackagesAvailable(String[] packageNames, UserHandleCompat user, boolean replacing);</span><br><span class="line">        void onPackagesUnavailable(String[] packageNames, UserHandleCompat user, boolean replacing);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>该接口声明了对package变化的一系列操作,LauncherModler是其具体实现。查看LauncherAppsCompat.OnAppsChangedCallbackCompat的调用，发现在LauncherAppsCompatVL的静态内部类WrappedCallback中有使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">code path: android/packages/apps/Launcher3/src/com/android/launcher3/compat/LauncherAppsCompatVL.java</span><br><span class="line"></span><br><span class="line">private static class WrappedCallback extends LauncherApps.Callback &#123;</span><br><span class="line">        private LauncherAppsCompat.OnAppsChangedCallbackCompat mCallback;</span><br><span class="line"></span><br><span class="line">        public WrappedCallback(LauncherAppsCompat.OnAppsChangedCallbackCompat callback) &#123;</span><br><span class="line">            mCallback = callback;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void onPackageRemoved(String packageName, UserHandle user) &#123;</span><br><span class="line">            mCallback.onPackageRemoved(packageName, UserHandleCompat.fromUser(user));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void onPackageAdded(String packageName, UserHandle user) &#123;</span><br><span class="line">            mCallback.onPackageAdded(packageName, UserHandleCompat.fromUser(user));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void onPackageChanged(String packageName, UserHandle user) &#123;</span><br><span class="line">            mCallback.onPackageChanged(packageName, UserHandleCompat.fromUser(user));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void onPackagesAvailable(String[] packageNames, UserHandle user, boolean replacing) &#123;</span><br><span class="line">            mCallback.onPackagesAvailable(packageNames, UserHandleCompat.fromUser(user), replacing);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void onPackagesUnavailable(String[] packageNames, UserHandle user,</span><br><span class="line">                boolean replacing) &#123;</span><br><span class="line">            mCallback.onPackagesUnavailable(packageNames, UserHandleCompat.fromUser(user),</span><br><span class="line">                    replacing);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>在这里又看到了熟悉的方法,从方法名上可以知道也是对于package变化的一系列调用.层层回调…看到这里依然没有找到源头,继续追踪,WrappedCallback在LauncherAppsCompatVL.java的addOnAppsChangedCallback中有使用到:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public void addOnAppsChangedCallback(LauncherAppsCompat.OnAppsChangedCallbackCompat callback) &#123;</span><br><span class="line">        WrappedCallback wrappedCallback = new WrappedCallback(callback);</span><br><span class="line">        synchronized (mCallbacks) &#123;</span><br><span class="line">            mCallbacks.put(callback, wrappedCallback);</span><br><span class="line">        &#125;</span><br><span class="line">        mLauncherApps.registerCallback(wrappedCallback);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>该方法中接收的callback就是LauncherModel,代码在LauncherAppState.java的构造函数中:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LauncherAppsCompat.getInstance(sContext).addOnAppsChangedCallback(mModel);</span><br></pre></td></tr></table></figure>
+<p>看到这里出现了一句比较重要的的代码,mLauncherApps.registerCallback(wrappedCallback);<br>这里的mLauncherApps是什么鬼?它在这里注册了监听回调；在LauncherAppsCompatVL.java的构造函数中对mLauncherApps进行了初始化，代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">LauncherAppsCompatVL(Context context) &#123;</span><br><span class="line">        super();</span><br><span class="line">        mLauncherApps = (LauncherApps) context.getSystemService(&quot;launcherapps&quot;);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>mLauncherApps貌似是个系统服务,继续查看源头:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">code path:frameworks/base/core/java/android/content/pm</span><br><span class="line">public void registerCallback(Callback callback, Handler handler) &#123;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            if (callback != null &amp;&amp; findCallbackLocked(callback) &lt; 0) &#123;</span><br><span class="line">                boolean addedFirstCallback = mCallbacks.size() == 0;</span><br><span class="line">                addCallbackLocked(callback, handler);</span><br><span class="line">                if (addedFirstCallback) &#123;</span><br><span class="line">                    try &#123;</span><br><span class="line">                        mService.addOnAppsChangedListener(mAppsChangedListener);</span><br><span class="line">                    &#125; catch (RemoteException re) &#123;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>通过一个mService添加了一个Listener,之后就是传递到Launcher的层层回调。那这里的mService又是什么呢?在LauncherApps.java的构造函数中进行了初始化</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public LauncherApps(Context context, ILauncherApps service) &#123;</span><br><span class="line">        mContext = context;</span><br><span class="line">        mService = service;</span><br><span class="line">        mPm = context.getPackageManager();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的service是ILauncherApps</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">code path: frameworks/base/core/java/android/content/pm/ILauncherApps.aidl</span><br><span class="line">interface ILauncherApps &#123;</span><br><span class="line">    void addOnAppsChangedListener(in IOnAppsChangedListener listener);</span><br><span class="line">    void removeOnAppsChangedListener(in IOnAppsChangedListener listener);</span><br><span class="line">    List&lt;ResolveInfo&gt; getLauncherActivities(String packageName, in UserHandle user);</span><br><span class="line">    ResolveInfo resolveActivity(in Intent intent, in UserHandle user);</span><br><span class="line">    void startActivityAsUser(in ComponentName component, in Rect sourceBounds,</span><br><span class="line">            in Bundle opts, in UserHandle user);</span><br><span class="line">    void showAppDetailsAsUser(in ComponentName component, in Rect sourceBounds,</span><br><span class="line">            in Bundle opts, in UserHandle user);</span><br><span class="line">    boolean isPackageEnabled(String packageName, in UserHandle user);</span><br><span class="line">    boolean isActivityEnabled(in ComponentName component, in UserHandle user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看到有addOnAppsChangedListener,removeOnAppsChangedListener(其他暂不关注)，通过名字可以知道这两个方法就是package监听器，ILauncherApps.aidl的具体实现是在LauncherAppsService.java的内部类LauncherAppsImpl</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">code path:frameworks/base/services/core/java/com/android/server/pm/LauncherAppsService.java</span><br><span class="line">public void addOnAppsChangedListener(IOnAppsChangedListener listener) throws RemoteException &#123;</span><br><span class="line">            synchronized (mListeners) &#123;</span><br><span class="line">                if (DEBUG) &#123;</span><br><span class="line">                    Log.d(TAG, &quot;Adding listener from &quot; + Binder.getCallingUserHandle());</span><br><span class="line">                &#125;</span><br><span class="line">                if (mListeners.getRegisteredCallbackCount() == 0) &#123;</span><br><span class="line">                    if (DEBUG) &#123;</span><br><span class="line">                        Log.d(TAG, &quot;Starting package monitoring&quot;);</span><br><span class="line">                    &#125;</span><br><span class="line">                    startWatchingPackageBroadcasts();</span><br><span class="line">                &#125;</span><br><span class="line">                mListeners.unregister(listener);</span><br><span class="line">                mListeners.register(listener, Binder.getCallingUserHandle());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>判断当前的callback==0时就会调用startWatchingPackageBroadcasts(),从方法上看像启动广播监听</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">private void startWatchingPackageBroadcasts() &#123;</span><br><span class="line">            mPackageMonitor.register(mContext, null, UserHandle.ALL, true);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>mPackageMonitor是LauncherAppsImpl的内部类，继承PackageMonitor，PackageMonitor又继承BroadcastReceiver，所以这鬼东西是个广播，mPackageMonitor调用父类的register方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">code path: frameworks/base/core/java/com/android/internal/content/PackageMonitor.java</span><br><span class="line">static &#123;</span><br><span class="line">        sPackageFilt.addAction(Intent.ACTION_PACKAGE_ADDED);</span><br><span class="line">        sPackageFilt.addAction(Intent.ACTION_PACKAGE_REMOVED);</span><br><span class="line">        sPackageFilt.addAction(Intent.ACTION_PACKAGE_CHANGED);</span><br><span class="line">        sPackageFilt.addAction(Intent.ACTION_QUERY_PACKAGE_RESTART);</span><br><span class="line">        sPackageFilt.addAction(Intent.ACTION_PACKAGE_RESTARTED);</span><br><span class="line">        sPackageFilt.addDataScheme(&quot;package&quot;);</span><br><span class="line">        sNonDataFilt.addAction(Intent.ACTION_UID_REMOVED);</span><br><span class="line">        sNonDataFilt.addAction(Intent.ACTION_USER_STOPPED);</span><br><span class="line">        sExternalFilt.addAction(Intent.ACTION_EXTERNAL_APPLICATIONS_AVAILABLE);</span><br><span class="line">        sExternalFilt.addAction(Intent.ACTION_EXTERNAL_APPLICATIONS_UNAVAILABLE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">public void register(Context context, Looper thread, UserHandle user,</span><br><span class="line">            boolean externalStorage) &#123;</span><br><span class="line">        if (mRegisteredContext != null) &#123;</span><br><span class="line">            throw new IllegalStateException(&quot;Already registered&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">        mRegisteredContext = context;</span><br><span class="line">        if (thread == null) &#123;</span><br><span class="line">            mRegisteredHandler = BackgroundThread.getHandler();</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            mRegisteredHandler = new Handler(thread);</span><br><span class="line">        &#125;</span><br><span class="line">        if (user != null) &#123;</span><br><span class="line">            context.registerReceiverAsUser(this, user, sPackageFilt, null, mRegisteredHandler);</span><br><span class="line">            context.registerReceiverAsUser(this, user, sNonDataFilt, null, mRegisteredHandler);</span><br><span class="line">            if (externalStorage) &#123;</span><br><span class="line">                context.registerReceiverAsUser(this, user, sExternalFilt, null,</span><br><span class="line">                        mRegisteredHandler);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            context.registerReceiver(this, sPackageFilt, null, mRegisteredHandler);</span><br><span class="line">            context.registerReceiver(this, sNonDataFilt, null, mRegisteredHandler);</span><br><span class="line">            if (externalStorage) &#123;</span><br><span class="line">                context.registerReceiver(this, sExternalFilt, null, mRegisteredHandler);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>看到这里就水落石出了，这里定义了广播过滤器，并且监听不同的用户。<br>监听到广播后肯定要有对应的处理，我们回到LauncherAppsImpl的addOnAppsChangedListener方法，这里传入了一个IOnAppsChangedListener的listener,参数也是个AIDL的接口，代码路径</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">code path: frameworks/base/core/java/android/content/pm/IOnAppsChangedListener.aidl</span><br><span class="line">oneway interface IOnAppsChangedListener &#123;</span><br><span class="line">    void onPackageRemoved(in UserHandle user, String packageName);</span><br><span class="line">    void onPackageAdded(in UserHandle user, String packageName);</span><br><span class="line">    void onPackageChanged(in UserHandle user, String packageName);</span><br><span class="line">    void onPackagesAvailable(in UserHandle user, in String[] packageNames, boolean replacing);</span><br><span class="line">    void onPackagesUnavailable(in UserHandle user, in String[] packageNames, boolean replacing);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用oneway关键字定义的接口，这就表明它的所有方法都采用非阻塞式方式。该接口的具体实现是在LauncherApps.java中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line">private IOnAppsChangedListener.Stub mAppsChangedListener = new IOnAppsChangedListener.Stub() &#123;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void onPackageRemoved(UserHandle user, String packageName)</span><br><span class="line">                throws RemoteException &#123;</span><br><span class="line">            if (DEBUG) &#123;</span><br><span class="line">                Log.d(TAG, &quot;onPackageRemoved &quot; + user.getIdentifier() + &quot;,&quot; + packageName);</span><br><span class="line">            &#125;</span><br><span class="line">            synchronized (LauncherApps.this) &#123;</span><br><span class="line">                for (CallbackMessageHandler callback : mCallbacks) &#123;</span><br><span class="line">                    callback.postOnPackageRemoved(packageName, user);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void onPackageChanged(UserHandle user, String packageName) throws RemoteException &#123;</span><br><span class="line">            if (DEBUG) &#123;</span><br><span class="line">                Log.d(TAG, &quot;onPackageChanged &quot; + user.getIdentifier() + &quot;,&quot; + packageName);</span><br><span class="line">            &#125;</span><br><span class="line">            synchronized (LauncherApps.this) &#123;</span><br><span class="line">                for (CallbackMessageHandler callback : mCallbacks) &#123;</span><br><span class="line">                    callback.postOnPackageChanged(packageName, user);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void onPackageAdded(UserHandle user, String packageName) throws RemoteException &#123;</span><br><span class="line">            if (DEBUG) &#123;</span><br><span class="line">                Log.d(TAG, &quot;onPackageAdded &quot; + user.getIdentifier() + &quot;,&quot; + packageName);</span><br><span class="line">            &#125;</span><br><span class="line">            synchronized (LauncherApps.this) &#123;</span><br><span class="line">                for (CallbackMessageHandler callback : mCallbacks) &#123;</span><br><span class="line">                    callback.postOnPackageAdded(packageName, user);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void onPackagesAvailable(UserHandle user, String[] packageNames, boolean replacing)</span><br><span class="line">                throws RemoteException &#123;</span><br><span class="line">            if (DEBUG) &#123;</span><br><span class="line">                Log.d(TAG, &quot;onPackagesAvailable &quot; + user.getIdentifier() + &quot;,&quot; + packageNames);</span><br><span class="line">            &#125;</span><br><span class="line">            synchronized (LauncherApps.this) &#123;</span><br><span class="line">                for (CallbackMessageHandler callback : mCallbacks) &#123;</span><br><span class="line">                    callback.postOnPackagesAvailable(packageNames, user, replacing);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void onPackagesUnavailable(UserHandle user, String[] packageNames, boolean replacing)</span><br><span class="line">                throws RemoteException &#123;</span><br><span class="line">            if (DEBUG) &#123;</span><br><span class="line">                Log.d(TAG, &quot;onPackagesUnavailable &quot; + user.getIdentifier() + &quot;,&quot; + packageNames);</span><br><span class="line">            &#125;</span><br><span class="line">            synchronized (LauncherApps.this) &#123;</span><br><span class="line">                for (CallbackMessageHandler callback : mCallbacks) &#123;</span><br><span class="line">                    callback.postOnPackagesUnavailable(packageNames, user, replacing);</span><br><span class="line">                &#125;</span><br><span class="line">           &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br></pre></td></tr></table></figure>
+<p>这里就以接收到新增应用的广播,调用到onPackageAdded方法,可以看到循环遍历callback之后调用callback的postOnPackageAdded方法处理,callback是CallbackMessageHandler,继承Handler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line">private static class CallbackMessageHandler extends Handler &#123;</span><br><span class="line">        private static final int MSG_ADDED = 1;</span><br><span class="line">        private static final int MSG_REMOVED = 2;</span><br><span class="line">        private static final int MSG_CHANGED = 3;</span><br><span class="line">        private static final int MSG_AVAILABLE = 4;</span><br><span class="line">        private static final int MSG_UNAVAILABLE = 5;</span><br><span class="line"></span><br><span class="line">        private LauncherApps.Callback mCallback;</span><br><span class="line"></span><br><span class="line">        private static class CallbackInfo &#123;</span><br><span class="line">            String[] packageNames;</span><br><span class="line">            String packageName;</span><br><span class="line">            boolean replacing;</span><br><span class="line">            UserHandle user;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public CallbackMessageHandler(Looper looper, LauncherApps.Callback callback) &#123;</span><br><span class="line">            super(looper, null, true);</span><br><span class="line">            mCallback = callback;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        @Override</span><br><span class="line">        public void handleMessage(Message msg) &#123;</span><br><span class="line">            if (mCallback == null || !(msg.obj instanceof CallbackInfo)) &#123;</span><br><span class="line">                return;</span><br><span class="line">            &#125;</span><br><span class="line">            CallbackInfo info = (CallbackInfo) msg.obj;</span><br><span class="line">            switch (msg.what) &#123;</span><br><span class="line">                case MSG_ADDED:</span><br><span class="line">                    Log.d(&quot;hu&quot;, &quot;LauncherApps handleMessage: onPackageAdded run&quot;);</span><br><span class="line">                    mCallback.onPackageAdded(info.packageName, info.user);</span><br><span class="line">                    break;</span><br><span class="line">                case MSG_REMOVED:</span><br><span class="line">                    mCallback.onPackageRemoved(info.packageName, info.user);</span><br><span class="line">                    break;</span><br><span class="line">                case MSG_CHANGED:</span><br><span class="line">                    mCallback.onPackageChanged(info.packageName, info.user);</span><br><span class="line">                    break;</span><br><span class="line">                case MSG_AVAILABLE:</span><br><span class="line">                    mCallback.onPackagesAvailable(info.packageNames, info.user, info.replacing);</span><br><span class="line">                    break;</span><br><span class="line">                case MSG_UNAVAILABLE:</span><br><span class="line">                    mCallback.onPackagesUnavailable(info.packageNames, info.user, info.replacing);</span><br><span class="line">                    break;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void postOnPackageAdded(String packageName, UserHandle user) &#123;</span><br><span class="line">            CallbackInfo info = new CallbackInfo();</span><br><span class="line">            info.packageName = packageName;</span><br><span class="line">            info.user = user;</span><br><span class="line">            obtainMessage(MSG_ADDED, info).sendToTarget();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void postOnPackageRemoved(String packageName, UserHandle user) &#123;</span><br><span class="line">            CallbackInfo info = new CallbackInfo();</span><br><span class="line">            info.packageName = packageName;</span><br><span class="line">            info.user = user;</span><br><span class="line">            obtainMessage(MSG_REMOVED, info).sendToTarget();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void postOnPackageChanged(String packageName, UserHandle user) &#123;</span><br><span class="line">            CallbackInfo info = new CallbackInfo();</span><br><span class="line">            info.packageName = packageName;</span><br><span class="line">            info.user = user;</span><br><span class="line">            obtainMessage(MSG_CHANGED, info).sendToTarget();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void postOnPackagesAvailable(String[] packageNames, UserHandle user,</span><br><span class="line">                boolean replacing) &#123;</span><br><span class="line">            CallbackInfo info = new CallbackInfo();</span><br><span class="line">            info.packageNames = packageNames;</span><br><span class="line">            info.replacing = replacing;</span><br><span class="line">            info.user = user;</span><br><span class="line">            obtainMessage(MSG_AVAILABLE, info).sendToTarget();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public void postOnPackagesUnavailable(String[] packageNames, UserHandle user,</span><br><span class="line">                boolean replacing) &#123;</span><br><span class="line">            CallbackInfo info = new CallbackInfo();</span><br><span class="line">            info.packageNames = packageNames;</span><br><span class="line">            info.replacing = replacing;</span><br><span class="line">            info.user = user;</span><br><span class="line">            obtainMessage(MSG_UNAVAILABLE, info).sendToTarget();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这就是处理具体操作的根源。查看哪里又调用了CallbackMessageHandler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">private void addCallbackLocked(Callback callback, Handler handler) &#123;</span><br><span class="line">        // Remove if already present.</span><br><span class="line">        removeCallbackLocked(callback);</span><br><span class="line">        if (handler == null) &#123;</span><br><span class="line">            handler = new Handler();</span><br><span class="line">        &#125;</span><br><span class="line">        CallbackMessageHandler toAdd = new CallbackMessageHandler(handler.getLooper(), callback);</span><br><span class="line">        mCallbacks.add(toAdd);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>registerCallback又调用了addCallbackLocked</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public void registerCallback(Callback callback, Handler handler) &#123;</span><br><span class="line">        synchronized (this) &#123;</span><br><span class="line">            if (callback != null &amp;&amp; findCallbackLocked(callback) &lt; 0) &#123;</span><br><span class="line">                boolean addedFirstCallback = mCallbacks.size() == 0;</span><br><span class="line">                addCallbackLocked(callback, handler);</span><br><span class="line">                if (addedFirstCallback) &#123;</span><br><span class="line">                    try &#123;</span><br><span class="line">                        mService.addOnAppsChangedListener(mAppsChangedListener);</span><br><span class="line">                    &#125; catch (RemoteException re) &#123;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>之后Launcher中LauncherAppsCompatVL又通过addOnAppsChangedCallback调用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public void addOnAppsChangedCallback(LauncherAppsCompat.OnAppsChangedCallbackCompat callback) &#123;</span><br><span class="line">        WrappedCallback wrappedCallback = new WrappedCallback(callback);</span><br><span class="line">        synchronized (mCallbacks) &#123;</span><br><span class="line">            mCallbacks.put(callback, wrappedCallback);</span><br><span class="line">        &#125;</span><br><span class="line">        mLauncherApps.registerCallback(wrappedCallback);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>最后一切就都串起来了</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/13/Launcher Package变化监听机制(一)/" rel="next" title="Launcher Package变化监听机制(一)">
+                <i class="fa fa-chevron-left"></i> Launcher Package变化监听机制(一)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/02/14/Android Monitor/" rel="prev" title="Android Monitor">
+                Android Monitor <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

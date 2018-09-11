@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述还记得初学Android的时候啥也不做,点击“Run”就可以看到程序跑起来,不一会界面就显示了”Hello World”。作为初学者只记得通过setContentView把布局文件和MainActivity关联起来,而具体是怎样实现的没有深究,后面在平常开发的时候经常会遇到疑问,例如使用hierarchyviewer工具查看布局层级发现在我们指定的布局外又包裹着其他父布局、经常看到其他地方说到">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android setContentView源码分析">
+<meta property="og:url" content="http://yoursite.com/2017/05/16/Android setContentView源码分析/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述还记得初学Android的时候啥也不做,点击“Run”就可以看到程序跑起来,不一会界面就显示了”Hello World”。作为初学者只记得通过setContentView把布局文件和MainActivity关联起来,而具体是怎样实现的没有深究,后面在平常开发的时候经常会遇到疑问,例如使用hierarchyviewer工具查看布局层级发现在我们指定的布局外又包裹着其他父布局、经常看到其他地方说到">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/989851-0157baf37c6fa96a.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/hierarchyviewer.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/hierarchyviewer2.jpg">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/relationship.jpg">
+<meta property="og:updated_time" content="2017-10-12T07:32:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android setContentView源码分析">
+<meta name="twitter:description" content="概述还记得初学Android的时候啥也不做,点击“Run”就可以看到程序跑起来,不一会界面就显示了”Hello World”。作为初学者只记得通过setContentView把布局文件和MainActivity关联起来,而具体是怎样实现的没有深究,后面在平常开发的时候经常会遇到疑问,例如使用hierarchyviewer工具查看布局层级发现在我们指定的布局外又包裹着其他父布局、经常看到其他地方说到">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/989851-0157baf37c6fa96a.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/05/16/Android setContentView源码分析/"/>
+
+
+
+
+
+  <title>Android setContentView源码分析 | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/05/16/Android setContentView源码分析/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android setContentView源码分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-16T00:00:00+08:00">
+                2017-05-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/05/16/Android setContentView源码分析/" class="leancloud_visitors" data-flag-title="Android setContentView源码分析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>还记得初学Android的时候啥也不做,点击“Run”就可以看到程序跑起来,不一会界面就显示了”Hello World”。作为初学者只记得通过setContentView把布局文件和MainActivity关联起来,而具体是怎样实现的没有深究,后面在平常开发的时候经常会遇到疑问,例如使用hierarchyviewer工具查看布局层级发现在我们指定的布局外又包裹着其他父布局、经常看到其他地方说到PhoneWindow是个什么结构？带着这些疑问从头再跟下源码。</p>
+<a id="more"></a>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><ul>
+<li>Activity、Window、PhoneWindow、DecorView之间的关系</li>
+<li>hierarchyviewer布局分析</li>
+<li>setContentView方法分析</li>
+<li>installDecor方法分析</li>
+<li>generateDecor方法分析</li>
+<li>generateLayout方法分析</li>
+</ul>
+<h2 id="hierarchyviewer"><a href="#hierarchyviewer" class="headerlink" title="hierarchyviewer"></a>hierarchyviewer</h2><p>先看下最常见的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">public class MainActivity extends Activity &#123;</span><br><span class="line">    @Override</span><br><span class="line">    protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;RelativeLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;</span><br><span class="line">    xmlns:tools=&quot;http://schemas.android.com/tools&quot;</span><br><span class="line">    android:id=&quot;@+id/activity_main&quot;</span><br><span class="line">    android:layout_width=&quot;match_parent&quot;</span><br><span class="line">    android:layout_height=&quot;match_parent&quot;</span><br><span class="line">    android:paddingBottom=&quot;@dimen/activity_vertical_margin&quot;</span><br><span class="line">    android:paddingLeft=&quot;@dimen/activity_horizontal_margin&quot;</span><br><span class="line">    android:paddingRight=&quot;@dimen/activity_horizontal_margin&quot;</span><br><span class="line">    android:paddingTop=&quot;@dimen/activity_vertical_margin&quot;</span><br><span class="line">    tools:context=&quot;com.example.hcy.handlerdemo.MainActivity&quot;&gt;</span><br><span class="line"></span><br><span class="line">    &lt;TextView</span><br><span class="line">        android:layout_width=&quot;wrap_content&quot;</span><br><span class="line">        android:layout_height=&quot;wrap_content&quot;</span><br><span class="line">        android:text=&quot;Hello World!&quot; /&gt;</span><br><span class="line">&lt;/RelativeLayout&gt;</span><br></pre></td></tr></table></figure>
+<p>运行如下</p>
+<p>   <img src="http://7xjvg5.com1.z0.glb.clouddn.com/989851-0157baf37c6fa96a.png" style="zoom:25%"></p>
+<p>打开SDK中的hierarchyviewer工具查看层级结构如下</p>
+<p><a href="http://7xjvg5.com1.z0.glb.clouddn.com/hierarchyviewer.png" target="_blank" rel="noopener"><img src="http://7xjvg5.com1.z0.glb.clouddn.com/hierarchyviewer.png" alt="img"></a></p>
+<p>可以看到除了最右边的RelativeLayout,外层还包裹了其他的布局,为啥会出现这种情况呢？</p>
+<h2 id="setContentView"><a href="#setContentView" class="headerlink" title="setContentView"></a>setContentView</h2><p>在MainActivity中调用setContentView(R.layout.activity_main)，会走到Activity的setContentView方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">源码路径：android-24/android/app/Activity.java</span><br><span class="line"></span><br><span class="line">    public void setContentView(@LayoutRes int layoutResID) &#123;</span><br><span class="line">        getWindow().setContentView(layoutResID);</span><br><span class="line">        initWindowDecorActionBar();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setContentView(View view) &#123;</span><br><span class="line">        getWindow().setContentView(view);</span><br><span class="line">        initWindowDecorActionBar();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setContentView(View view, ViewGroup.LayoutParams params) &#123;</span><br><span class="line">        getWindow().setContentView(view, params);</span><br><span class="line">        initWindowDecorActionBar();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>Activity中三个方法都会执行getWindow()的setContentView方法，这里的getWindow()的返回的是Window实例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public Window getWindow() &#123;</span><br><span class="line">    return mWindow;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在Activity的attach方法中实例化</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mWindow = new PhoneWindow(this, window);</span><br></pre></td></tr></table></figure>
+<p>查看PhoneWindow中的setContentView方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">源码路径：android-24/com/android/internal/policy/PhoneWindow.java</span><br><span class="line"></span><br><span class="line">    public void setContentView(int layoutResID) &#123;</span><br><span class="line">        // Note: FEATURE_CONTENT_TRANSITIONS may be set in the process of installing the window</span><br><span class="line">        // decor, when theme attributes and the like are crystalized. Do not check the feature</span><br><span class="line">        // before this happens.</span><br><span class="line">        if (mContentParent == null) &#123;</span><br><span class="line">            //第一次调用时mContentParent为null，通过installDecor实例化。</span><br><span class="line">            installDecor();</span><br><span class="line">        &#125; else if (!hasFeature(FEATURE_CONTENT_TRANSITIONS)) &#123;  //是否设置了窗口过渡标识，默认为false</span><br><span class="line">            //移除mContentParent中所有的子View</span><br><span class="line">            mContentParent.removeAllViews();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (hasFeature(FEATURE_CONTENT_TRANSITIONS)) &#123;</span><br><span class="line">            //设置了窗口过渡标识的情况</span><br><span class="line">            final Scene newScene = Scene.getSceneForLayout(mContentParent, layoutResID,</span><br><span class="line">                    getContext());</span><br><span class="line">            //使用TransitionManager进行过渡的处理</span><br><span class="line">            transitionTo(newScene);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            //不需要过渡时，通过LayoutInflater的inflate将资源文件转换为View树，并添加至mContentParent中</span><br><span class="line">            mLayoutInflater.inflate(layoutResID, mContentParent);</span><br><span class="line">        &#125;</span><br><span class="line">        //请求设置Window内容的属性值，将其写入一个WindowInsets类中</span><br><span class="line">        mContentParent.requestApplyInsets();</span><br><span class="line">        final Callback cb = getCallback();</span><br><span class="line">        if (cb != null &amp;&amp; !isDestroyed()) &#123;</span><br><span class="line">            cb.onContentChanged();</span><br><span class="line">        &#125;</span><br><span class="line">        //已设置content View</span><br><span class="line">        mContentParentExplicitlySet = true;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>同样PhoneWindow还有另外两个对应Activity中的setContentView方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">public void setContentView(View view) &#123;</span><br><span class="line">    setContentView(view, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">@Override</span><br><span class="line">public void setContentView(View view, ViewGroup.LayoutParams params) &#123;</span><br><span class="line">    // Note: FEATURE_CONTENT_TRANSITIONS may be set in the process of installing the window</span><br><span class="line">    // decor, when theme attributes and the like are crystalized. Do not check the feature</span><br><span class="line">    // before this happens.</span><br><span class="line">    if (mContentParent == null) &#123;</span><br><span class="line">        installDecor();</span><br><span class="line">    &#125; else if (!hasFeature(FEATURE_CONTENT_TRANSITIONS)) &#123;</span><br><span class="line">        mContentParent.removeAllViews();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (hasFeature(FEATURE_CONTENT_TRANSITIONS)) &#123;</span><br><span class="line">        view.setLayoutParams(params);</span><br><span class="line">        final Scene newScene = new Scene(mContentParent, view);</span><br><span class="line">        transitionTo(newScene);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        mContentParent.addView(view, params);</span><br><span class="line">    &#125;</span><br><span class="line">    mContentParent.requestApplyInsets();</span><br><span class="line">    final Callback cb = getCallback();</span><br><span class="line">    if (cb != null &amp;&amp; !isDestroyed()) &#123;</span><br><span class="line">        cb.onContentChanged();</span><br><span class="line">    &#125;</span><br><span class="line">    mContentParentExplicitlySet = true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，当调用 setContentView(View view)时，其内部会调用setContentView(View view, ViewGroup.LayoutParams params)，只是LayoutParams 值为MATCH_PARENT， 与setContentView(int layoutResID)相比，由使用LayoutInflater的inflate解析换成了mContentParent的addView。</p>
+<h3 id="小节"><a href="#小节" class="headerlink" title="小节"></a>小节</h3><ul>
+<li>如果第一次调用setContentView，执行installDecor()；</li>
+<li>如果不是第一次调用setContentView，且未设置窗口过渡标志，调用removeAllViews将窗口中所有子View移除(所以在程序中若多次调用setContentView方法显示界面不会有影响)</li>
+<li>如果设置了窗口过渡标志，使用TransitionManager进行过渡的处理，否则选择合适的方式将View添加到mContentParent中</li>
+</ul>
+<h2 id="installDecor方法分析"><a href="#installDecor方法分析" class="headerlink" title="installDecor方法分析"></a>installDecor方法分析</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br></pre></td><td class="code"><pre><span class="line">源码路径：android-24/com/android/internal/policy/PhoneWindow.java</span><br><span class="line">   private void installDecor() &#123;</span><br><span class="line">        mForceDecorInstall = false;</span><br><span class="line">        if (mDecor == null) &#123;</span><br><span class="line">            //如果mDecor为null则通过generateDecor初始化</span><br><span class="line">            mDecor = generateDecor(-1);</span><br><span class="line">            //设置mDecor中子View焦点获取关系,FOCUS_AFTER_DESCENDANTS指定只有mDecor中所有子View</span><br><span class="line">            //都不获取焦点时才让mDecor获得焦点</span><br><span class="line">            mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);</span><br><span class="line">            //设置mDecor为整个Activity窗口的根节点</span><br><span class="line">            mDecor.setIsRootNamespace(true);</span><br><span class="line">            if (!mInvalidatePanelMenuPosted &amp;&amp; mInvalidatePanelMenuFeatures != 0) &#123;</span><br><span class="line">                //将Runnable跑在用户界面线程</span><br><span class="line">                mDecor.postOnAnimation(mInvalidatePanelMenuRunnable);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            //mDecor不为null设置当前窗口上下文为PhoneWindow</span><br><span class="line">            mDecor.setWindow(this);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mContentParent == null) &#123;</span><br><span class="line">            //如果mContentParent为null则通过generateLayout初始化</span><br><span class="line">            mContentParent = generateLayout(mDecor);</span><br><span class="line"></span><br><span class="line">            // Set up decor part of UI to ignore fitsSystemWindows if appropriate.</span><br><span class="line">            mDecor.makeOptionalFitsSystemWindows();</span><br><span class="line">            //DecorContentParent位于com.android.internal.widget中，</span><br><span class="line">            //是一个接口由应用程序窗口的顶层Decor实现，该类主要为mDecor提供了许多标题/窗口装饰功能</span><br><span class="line">            final DecorContentParent decorContentParent = (DecorContentParent) mDecor.findViewById(</span><br><span class="line">                    R.id.decor_content_parent);</span><br><span class="line"></span><br><span class="line">            if (decorContentParent != null) &#123;</span><br><span class="line">                mDecorContentParent = decorContentParent;</span><br><span class="line">                mDecorContentParent.setWindowCallback(getCallback());</span><br><span class="line">                if (mDecorContentParent.getTitle() == null) &#123;</span><br><span class="line">                    //设置窗口标题</span><br><span class="line">                    mDecorContentParent.setWindowTitle(mTitle);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                final int localFeatures = getLocalFeatures();</span><br><span class="line">                for (int i = 0; i &lt; FEATURE_MAX; i++) &#123;</span><br><span class="line">                    if ((localFeatures &amp; (1 &lt;&lt; i)) != 0) &#123;</span><br><span class="line">                        mDecorContentParent.initFeature(i);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                mDecorContentParent.setUiOptions(mUiOptions);</span><br><span class="line"></span><br><span class="line">                //mDecorContentParent设置图标和Logo的判断</span><br><span class="line">                if ((mResourcesSetFlags &amp; FLAG_RESOURCE_SET_ICON) != 0 ||</span><br><span class="line">                        (mIconRes != 0 &amp;&amp; !mDecorContentParent.hasIcon())) &#123;</span><br><span class="line">                    mDecorContentParent.setIcon(mIconRes);</span><br><span class="line">                &#125; else if ((mResourcesSetFlags &amp; FLAG_RESOURCE_SET_ICON) == 0 &amp;&amp;</span><br><span class="line">                        mIconRes == 0 &amp;&amp; !mDecorContentParent.hasIcon()) &#123;</span><br><span class="line">                    mDecorContentParent.setIcon(</span><br><span class="line">                            getContext().getPackageManager().getDefaultActivityIcon());</span><br><span class="line">                    mResourcesSetFlags |= FLAG_RESOURCE_SET_ICON_FALLBACK;</span><br><span class="line">                &#125;</span><br><span class="line">                if ((mResourcesSetFlags &amp; FLAG_RESOURCE_SET_LOGO) != 0 ||</span><br><span class="line">                        (mLogoRes != 0 &amp;&amp; !mDecorContentParent.hasLogo())) &#123;</span><br><span class="line">                    mDecorContentParent.setLogo(mLogoRes);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                // Invalidate if the panel menu hasn&apos;t been created before this.</span><br><span class="line">                // Panel menu invalidation is deferred avoiding application onCreateOptionsMenu</span><br><span class="line">                // being called in the middle of onCreate or similar.</span><br><span class="line">                // A pending invalidation will typically be resolved before the posted message</span><br><span class="line">                // would run normally in order to satisfy instance state restoration.</span><br><span class="line">                PanelFeatureState st = getPanelState(FEATURE_OPTIONS_PANEL, false);</span><br><span class="line">                if (!isDestroyed() &amp;&amp; (st == null || st.menu == null) &amp;&amp; !mIsStartingWindow) &#123;</span><br><span class="line">                    //使面板菜单失效</span><br><span class="line">                    invalidatePanelMenu(FEATURE_ACTION_BAR);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                //若decorContentParent为null,根据窗口是否为一个包含Title的窗口决定是否显示title</span><br><span class="line">                //如果窗口包含特征FEATURE_NO_TITLE，则隐藏窗口的title view 否则设置窗口的title</span><br><span class="line">                mTitleView = (TextView) findViewById(R.id.title);</span><br><span class="line">                if (mTitleView != null) &#123;</span><br><span class="line">                    if ((getLocalFeatures() &amp; (1 &lt;&lt; FEATURE_NO_TITLE)) != 0) &#123;</span><br><span class="line">                        final View titleContainer = findViewById(R.id.title_container);</span><br><span class="line">                        if (titleContainer != null) &#123;</span><br><span class="line">                            titleContainer.setVisibility(View.GONE);</span><br><span class="line">                        &#125; else &#123;</span><br><span class="line">                            mTitleView.setVisibility(View.GONE);</span><br><span class="line">                        &#125;</span><br><span class="line">                        mContentParent.setForeground(null);</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        mTitleView.setText(mTitle);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            if (mDecor.getBackground() == null &amp;&amp; mBackgroundFallbackResource != 0) &#123;</span><br><span class="line">                //设置背景</span><br><span class="line">                mDecor.setBackgroundFallback(mBackgroundFallbackResource);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            // Only inflate or create a new TransitionManager if the caller hasn&apos;t</span><br><span class="line">            // already set a custom one.</span><br><span class="line">            if (hasFeature(FEATURE_ACTIVITY_TRANSITIONS)) &#123;</span><br><span class="line">                //设置了窗口过渡标识的情况</span><br><span class="line">                if (mTransitionManager == null) &#123;</span><br><span class="line">                    //TransitionManager为空的时先初始化</span><br><span class="line">                    final int transitionRes = getWindowStyle().getResourceId(</span><br><span class="line">                            R.styleable.Window_windowContentTransitionManager,</span><br><span class="line">                            0);</span><br><span class="line">                    if (transitionRes != 0) &#123;</span><br><span class="line">                        final TransitionInflater inflater = TransitionInflater.from(getContext());</span><br><span class="line">                        mTransitionManager = inflater.inflateTransitionManager(transitionRes,</span><br><span class="line">                                mContentParent);</span><br><span class="line">                    &#125; else &#123;</span><br><span class="line">                        mTransitionManager = new TransitionManager();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                //实例化各种过渡动画效果、进入、退出。。。</span><br><span class="line">                mEnterTransition = getTransition(mEnterTransition, null,</span><br><span class="line">                        R.styleable.Window_windowEnterTransition);</span><br><span class="line">                mReturnTransition = getTransition(mReturnTransition, USE_DEFAULT_TRANSITION,</span><br><span class="line">                        R.styleable.Window_windowReturnTransition);</span><br><span class="line">                mExitTransition = getTransition(mExitTransition, null,</span><br><span class="line">                        R.styleable.Window_windowExitTransition);</span><br><span class="line">                mReenterTransition = getTransition(mReenterTransition, USE_DEFAULT_TRANSITION,</span><br><span class="line">                        R.styleable.Window_windowReenterTransition);</span><br><span class="line">                mSharedElementEnterTransition = getTransition(mSharedElementEnterTransition, null,</span><br><span class="line">                        R.styleable.Window_windowSharedElementEnterTransition);</span><br><span class="line">                mSharedElementReturnTransition = getTransition(mSharedElementReturnTransition,</span><br><span class="line">                        USE_DEFAULT_TRANSITION,</span><br><span class="line">                        R.styleable.Window_windowSharedElementReturnTransition);</span><br><span class="line">                mSharedElementExitTransition = getTransition(mSharedElementExitTransition, null,</span><br><span class="line">                        R.styleable.Window_windowSharedElementExitTransition);</span><br><span class="line">                mSharedElementReenterTransition = getTransition(mSharedElementReenterTransition,</span><br><span class="line">                        USE_DEFAULT_TRANSITION,</span><br><span class="line">                        R.styleable.Window_windowSharedElementReenterTransition);</span><br><span class="line">                if (mAllowEnterTransitionOverlap == null) &#123;</span><br><span class="line">                    //是否允许进入过渡动画重叠</span><br><span class="line">                    mAllowEnterTransitionOverlap = getWindowStyle().getBoolean(</span><br><span class="line">                            R.styleable.Window_windowAllowEnterTransitionOverlap, true);</span><br><span class="line">                &#125;</span><br><span class="line">                if (mAllowReturnTransitionOverlap == null) &#123;</span><br><span class="line">                    //是否允许返回过渡动画重叠</span><br><span class="line">                    mAllowReturnTransitionOverlap = getWindowStyle().getBoolean(</span><br><span class="line">                            R.styleable.Window_windowAllowReturnTransitionOverlap, true);</span><br><span class="line">                &#125;</span><br><span class="line">                if (mBackgroundFadeDurationMillis &lt; 0) &#123;</span><br><span class="line">                    //背景消失的持续时间</span><br><span class="line">                    mBackgroundFadeDurationMillis = getWindowStyle().getInteger(</span><br><span class="line">                            R.styleable.Window_windowTransitionBackgroundFadeDuration,</span><br><span class="line">                            DEFAULT_BACKGROUND_FADE_DURATION_MS);</span><br><span class="line">                &#125;</span><br><span class="line">                if (mSharedElementsUseOverlay == null) &#123;</span><br><span class="line">                    //另一种过渡效果</span><br><span class="line">                    mSharedElementsUseOverlay = getWindowStyle().getBoolean(</span><br><span class="line">                            R.styleable.Window_windowSharedElementsUseOverlay, true);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="generateDecor方法分析"><a href="#generateDecor方法分析" class="headerlink" title="generateDecor方法分析"></a>generateDecor方法分析</h2><p>在installDecor中如果判断为null则通过generateDecor初始化，方法如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">源码路径：android-24/com/android/internal/policy/PhoneWindow.java</span><br><span class="line">    protected DecorView generateDecor(int featureId) &#123;</span><br><span class="line">        // System process doesn&apos;t have application context and in that case we need to directly use</span><br><span class="line">        // the context we have. Otherwise we want the application context, so we don&apos;t cling to the</span><br><span class="line">        // activity.</span><br><span class="line">        Context context;</span><br><span class="line">        if (mUseDecorContext) &#123;</span><br><span class="line">            Context applicationContext = getContext().getApplicationContext();</span><br><span class="line">            if (applicationContext == null) &#123;</span><br><span class="line">                context = getContext();</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                context = new DecorContext(applicationContext, getContext().getResources());</span><br><span class="line">                if (mTheme != -1) &#123;</span><br><span class="line">                    context.setTheme(mTheme);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            context = getContext();</span><br><span class="line">        &#125;</span><br><span class="line">        return new DecorView(context, featureId, this, getAttributes());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里根据上下文生成一个DecorView对象，DecorView是PhoneWindow类的内部类，继承自FrameLayout</p>
+<h2 id="generateLayout方法分析"><a href="#generateLayout方法分析" class="headerlink" title="generateLayout方法分析"></a>generateLayout方法分析</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br></pre></td><td class="code"><pre><span class="line">protected ViewGroup generateLayout(DecorView decor) &#123;</span><br><span class="line">    // Apply data from current theme.</span><br><span class="line">    //从当前Window的Theme中获取一组属性值，赋给a</span><br><span class="line">    TypedArray a = getWindowStyle();</span><br><span class="line">    //窗口是否浮动</span><br><span class="line">    mIsFloating = a.getBoolean(R.styleable.Window_windowIsFloating, false);</span><br><span class="line">    int flagsToUpdate = (FLAG_LAYOUT_IN_SCREEN|FLAG_LAYOUT_INSET_DECOR)</span><br><span class="line">            &amp; (~getForcedWindowFlags());</span><br><span class="line">    if (mIsFloating) &#123;</span><br><span class="line">        setLayout(WRAP_CONTENT, WRAP_CONTENT);</span><br><span class="line">        setFlags(0, flagsToUpdate);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        setFlags(FLAG_LAYOUT_IN_SCREEN|FLAG_LAYOUT_INSET_DECOR, flagsToUpdate);</span><br><span class="line">    &#125;</span><br><span class="line">    //窗口是否支持标题栏，隐藏显示标题栏操作在此处。</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowNoTitle, false)) &#123;</span><br><span class="line">        requestFeature(FEATURE_NO_TITLE);</span><br><span class="line">    &#125; else if (a.getBoolean(R.styleable.Window_windowActionBar, false)) &#123;</span><br><span class="line">        // Don&apos;t allow an action bar if there is no title.</span><br><span class="line">        requestFeature(FEATURE_ACTION_BAR);</span><br><span class="line">    &#125;</span><br><span class="line">    //ActionBar导航栏是否不占布局空间叠加显示在当前窗口之上。</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowActionBarOverlay, false)) &#123;</span><br><span class="line">        requestFeature(FEATURE_ACTION_BAR_OVERLAY);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowActionModeOverlay, false)) &#123;</span><br><span class="line">        requestFeature(FEATURE_ACTION_MODE_OVERLAY);</span><br><span class="line">    &#125;</span><br><span class="line">    //是否设置从左边滑动消失</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowSwipeToDismiss, false)) &#123;</span><br><span class="line">        requestFeature(FEATURE_SWIPE_TO_DISMISS);</span><br><span class="line">    &#125;</span><br><span class="line">    //当前Activity是否支持全屏</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowFullscreen, false)) &#123;</span><br><span class="line">        setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN &amp; (~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line">    //透明状态栏标志位设置</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowTranslucentStatus,</span><br><span class="line">            false)) &#123;</span><br><span class="line">        setFlags(FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_STATUS</span><br><span class="line">                &amp; (~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line">    //透明导航栏标志位设置</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowTranslucentNavigation,</span><br><span class="line">            false)) &#123;</span><br><span class="line">        setFlags(FLAG_TRANSLUCENT_NAVIGATION, FLAG_TRANSLUCENT_NAVIGATION</span><br><span class="line">                &amp; (~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowOverscan, false)) &#123;</span><br><span class="line">        setFlags(FLAG_LAYOUT_IN_OVERSCAN, FLAG_LAYOUT_IN_OVERSCAN&amp;(~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line">    //是否允许系统壁纸显示在窗口后面</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowShowWallpaper, false)) &#123;</span><br><span class="line">        setFlags(FLAG_SHOW_WALLPAPER, FLAG_SHOW_WALLPAPER&amp;(~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line">    //窗口触摸事件标志位</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowEnableSplitTouch,</span><br><span class="line">            getContext().getApplicationInfo().targetSdkVersion</span><br><span class="line">                    &gt;= android.os.Build.VERSION_CODES.HONEYCOMB)) &#123;</span><br><span class="line">        setFlags(FLAG_SPLIT_TOUCH, FLAG_SPLIT_TOUCH&amp;(~getForcedWindowFlags()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    a.getValue(R.styleable.Window_windowMinWidthMajor, mMinWidthMajor);</span><br><span class="line">    a.getValue(R.styleable.Window_windowMinWidthMinor, mMinWidthMinor);</span><br><span class="line"></span><br><span class="line">    if (a.hasValue(R.styleable.Window_windowFixedWidthMajor)) &#123;</span><br><span class="line">        if (mFixedWidthMajor == null) mFixedWidthMajor = new TypedValue();</span><br><span class="line">        a.getValue(R.styleable.Window_windowFixedWidthMajor,</span><br><span class="line">                mFixedWidthMajor);</span><br><span class="line">    &#125;</span><br><span class="line">    if (a.hasValue(R.styleable.Window_windowFixedWidthMinor)) &#123;</span><br><span class="line">        if (mFixedWidthMinor == null) mFixedWidthMinor = new TypedValue();</span><br><span class="line">        a.getValue(R.styleable.Window_windowFixedWidthMinor,</span><br><span class="line">                mFixedWidthMinor);</span><br><span class="line">    &#125;</span><br><span class="line">    if (a.hasValue(R.styleable.Window_windowFixedHeightMajor)) &#123;</span><br><span class="line">        if (mFixedHeightMajor == null) mFixedHeightMajor = new TypedValue();</span><br><span class="line">        a.getValue(R.styleable.Window_windowFixedHeightMajor,</span><br><span class="line">                mFixedHeightMajor);</span><br><span class="line">    &#125;</span><br><span class="line">    if (a.hasValue(R.styleable.Window_windowFixedHeightMinor)) &#123;</span><br><span class="line">        if (mFixedHeightMinor == null) mFixedHeightMinor = new TypedValue();</span><br><span class="line">        a.getValue(R.styleable.Window_windowFixedHeightMinor,</span><br><span class="line">                mFixedHeightMinor);</span><br><span class="line">    &#125;</span><br><span class="line">    //是否使用窗口过渡动画，使用TransitionManager</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowContentTransitions, false)) &#123;</span><br><span class="line">        requestFeature(FEATURE_CONTENT_TRANSITIONS);</span><br><span class="line">    &#125;</span><br><span class="line">    //是否运行Activity过渡动画</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowActivityTransitions, false)) &#123;</span><br><span class="line">        requestFeature(FEATURE_ACTIVITY_TRANSITIONS);</span><br><span class="line">    &#125;</span><br><span class="line">    //窗口是否透明</span><br><span class="line">    mIsTranslucent = a.getBoolean(R.styleable.Window_windowIsTranslucent, false);</span><br><span class="line"></span><br><span class="line">    final Context context = getContext();</span><br><span class="line">    //获取当前应用的目标sdk版本号</span><br><span class="line">    final int targetSdk = context.getApplicationInfo().targetSdkVersion;</span><br><span class="line">    //当前目标sdk版本号是否小于11</span><br><span class="line">    final boolean targetPreHoneycomb = targetSdk &lt; android.os.Build.VERSION_CODES.HONEYCOMB;</span><br><span class="line">    //当前目标sdk版本号是否小于14</span><br><span class="line">    final boolean targetPreIcs = targetSdk &lt; android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;</span><br><span class="line">    //当前目标sdk版本号是否小于21</span><br><span class="line">    final boolean targetPreL = targetSdk &lt; android.os.Build.VERSION_CODES.LOLLIPOP;</span><br><span class="line">    //是否需要菜单选项</span><br><span class="line">    final boolean targetHcNeedsOptions = context.getResources().getBoolean(</span><br><span class="line">            R.bool.target_honeycomb_needs_options_menu);</span><br><span class="line">    //是否有ActionBar</span><br><span class="line">    final boolean noActionBar = !hasFeature(FEATURE_ACTION_BAR) || hasFeature(FEATURE_NO_TITLE);</span><br><span class="line"></span><br><span class="line">    if (targetPreHoneycomb || (targetPreIcs &amp;&amp; targetHcNeedsOptions &amp;&amp; noActionBar)) &#123;</span><br><span class="line">        //目标版本号小于11或者满足小于14且需要菜单选项且无ActionBar，则设置需要菜单选项</span><br><span class="line">        setNeedsMenuKey(WindowManager.LayoutParams.NEEDS_MENU_SET_TRUE);</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        //设置不需要菜单选项</span><br><span class="line">        setNeedsMenuKey(WindowManager.LayoutParams.NEEDS_MENU_SET_FALSE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (!mForcedStatusBarColor) &#123;</span><br><span class="line">        //设置状态栏颜色</span><br><span class="line">        mStatusBarColor = a.getColor(R.styleable.Window_statusBarColor, 0xFF000000);</span><br><span class="line">    &#125;</span><br><span class="line">    if (!mForcedNavigationBarColor) &#123;</span><br><span class="line">        //设置导航栏颜色</span><br><span class="line">        mNavigationBarColor = a.getColor(R.styleable.Window_navigationBarColor, 0xFF000000);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    WindowManager.LayoutParams params = getAttributes();</span><br><span class="line"></span><br><span class="line">    // Non-floating windows on high end devices must put up decor beneath the system bars and</span><br><span class="line">    // therefore must know about visibility changes of those.</span><br><span class="line">    if (!mIsFloating &amp;&amp; ActivityManager.isHighEndGfx()) &#123;</span><br><span class="line">        if (!targetPreL &amp;&amp; a.getBoolean(</span><br><span class="line">                R.styleable.Window_windowDrawsSystemBarBackgrounds,</span><br><span class="line">                false)) &#123;</span><br><span class="line">            //高版本对System bar的处理</span><br><span class="line">            setFlags(FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS,</span><br><span class="line">                    FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS &amp; ~getForcedWindowFlags());</span><br><span class="line">        &#125;</span><br><span class="line">        if (mDecor.mForceWindowDrawsStatusBarBackground) &#123;</span><br><span class="line">            params.privateFlags |= PRIVATE_FLAG_FORCE_DRAW_STATUS_BAR_BACKGROUND;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    //是否设置状态栏可见</span><br><span class="line">    if (a.getBoolean(R.styleable.Window_windowLightStatusBar, false)) &#123;</span><br><span class="line">        decor.setSystemUiVisibility(</span><br><span class="line">                decor.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (mAlwaysReadCloseOnTouchAttr || getContext().getApplicationInfo().targetSdkVersion</span><br><span class="line">            &gt;= android.os.Build.VERSION_CODES.HONEYCOMB) &#123;</span><br><span class="line">        if (a.getBoolean(</span><br><span class="line">                R.styleable.Window_windowCloseOnTouchOutside,</span><br><span class="line">                false)) &#123;</span><br><span class="line">            setCloseOnTouchOutsideIfNotSet(true);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">     //设置输入法的状态</span><br><span class="line">    if (!hasSoftInputMode()) &#123;</span><br><span class="line">        params.softInputMode = a.getInt(</span><br><span class="line">                R.styleable.Window_windowSoftInputMode,</span><br><span class="line">                params.softInputMode);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (a.getBoolean(R.styleable.Window_backgroundDimEnabled,</span><br><span class="line">            mIsFloating)) &#123;</span><br><span class="line">        /* All dialogs should have the window dimmed */</span><br><span class="line">        //dialog出现时窗口状态</span><br><span class="line">        if ((getForcedWindowFlags()&amp;WindowManager.LayoutParams.FLAG_DIM_BEHIND) == 0) &#123;</span><br><span class="line">            params.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;</span><br><span class="line">        &#125;</span><br><span class="line">        if (!haveDimAmount()) &#123;</span><br><span class="line">            params.dimAmount = a.getFloat(</span><br><span class="line">                    android.R.styleable.Window_backgroundDimAmount, 0.5f);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    //设置当前Activity的出现动画效果</span><br><span class="line">    if (params.windowAnimations == 0) &#123;</span><br><span class="line">        params.windowAnimations = a.getResourceId(</span><br><span class="line">                R.styleable.Window_windowAnimationStyle, 0);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // The rest are only done if this window is not embedded; otherwise,</span><br><span class="line">    // the values are inherited from our container.</span><br><span class="line">    if (getContainer() == null) &#123;</span><br><span class="line">        if (mBackgroundDrawable == null) &#123;</span><br><span class="line">            if (mBackgroundResource == 0) &#123;</span><br><span class="line">                mBackgroundResource = a.getResourceId(</span><br><span class="line">                        R.styleable.Window_windowBackground, 0);</span><br><span class="line">            &#125;</span><br><span class="line">            if (mFrameResource == 0) &#123;</span><br><span class="line">                mFrameResource = a.getResourceId(R.styleable.Window_windowFrame, 0);</span><br><span class="line">            &#125;</span><br><span class="line">            mBackgroundFallbackResource = a.getResourceId(</span><br><span class="line">                    R.styleable.Window_windowBackgroundFallback, 0);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mLoadElevation) &#123;</span><br><span class="line">            mElevation = a.getDimension(R.styleable.Window_windowElevation, 0);</span><br><span class="line">        &#125;</span><br><span class="line">        mClipToOutline = a.getBoolean(R.styleable.Window_windowClipToOutline, false);</span><br><span class="line">        mTextColor = a.getColor(R.styleable.Window_textColor, Color.TRANSPARENT);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Inflate the window decor.</span><br><span class="line"></span><br><span class="line">    int layoutResource;</span><br><span class="line">    //返回一个用于描述当前Window特征的整数值</span><br><span class="line">    int features = getLocalFeatures();</span><br><span class="line">    // System.out.println(&quot;Features: 0x&quot; + Integer.toHexString(features));</span><br><span class="line">    //下面一大段判断根据features值选定窗口资源文件id</span><br><span class="line">    if ((features &amp; (1 &lt;&lt; FEATURE_SWIPE_TO_DISMISS)) != 0) &#123;</span><br><span class="line">        layoutResource = R.layout.screen_swipe_dismiss;</span><br><span class="line">    &#125; else if ((features &amp; ((1 &lt;&lt; FEATURE_LEFT_ICON) | (1 &lt;&lt; FEATURE_RIGHT_ICON))) != 0) &#123;</span><br><span class="line">        if (mIsFloating) &#123;</span><br><span class="line">            TypedValue res = new TypedValue();</span><br><span class="line">            getContext().getTheme().resolveAttribute(</span><br><span class="line">                    R.attr.dialogTitleIconsDecorLayout, res, true);</span><br><span class="line">            layoutResource = res.resourceId;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            layoutResource = R.layout.screen_title_icons;</span><br><span class="line">        &#125;</span><br><span class="line">        // XXX Remove this once action bar supports these features.</span><br><span class="line">        removeFeature(FEATURE_ACTION_BAR);</span><br><span class="line">        // System.out.println(&quot;Title Icons!&quot;);</span><br><span class="line">    &#125; else if ((features &amp; ((1 &lt;&lt; FEATURE_PROGRESS) | (1 &lt;&lt; FEATURE_INDETERMINATE_PROGRESS))) != 0</span><br><span class="line">            &amp;&amp; (features &amp; (1 &lt;&lt; FEATURE_ACTION_BAR)) == 0) &#123;</span><br><span class="line">        // Special case for a window with only a progress bar (and title).</span><br><span class="line">        // XXX Need to have a no-title version of embedded windows.</span><br><span class="line">        layoutResource = R.layout.screen_progress;</span><br><span class="line">        // System.out.println(&quot;Progress!&quot;);</span><br><span class="line">    &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_CUSTOM_TITLE)) != 0) &#123;</span><br><span class="line">        // Special case for a window with a custom title.</span><br><span class="line">        // If the window is floating, we need a dialog layout</span><br><span class="line">        if (mIsFloating) &#123;</span><br><span class="line">            TypedValue res = new TypedValue();</span><br><span class="line">            getContext().getTheme().resolveAttribute(</span><br><span class="line">                    R.attr.dialogCustomTitleDecorLayout, res, true);</span><br><span class="line">            layoutResource = res.resourceId;</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            layoutResource = R.layout.screen_custom_title;</span><br><span class="line">        &#125;</span><br><span class="line">        // XXX Remove this once action bar supports these features.</span><br><span class="line">        removeFeature(FEATURE_ACTION_BAR);</span><br><span class="line">    &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_NO_TITLE)) == 0) &#123;</span><br><span class="line">        // If no other features and not embedded, only need a title.</span><br><span class="line">        // If the window is floating, we need a dialog layout</span><br><span class="line">        if (mIsFloating) &#123;</span><br><span class="line">            TypedValue res = new TypedValue();</span><br><span class="line">            getContext().getTheme().resolveAttribute(</span><br><span class="line">                    R.attr.dialogTitleDecorLayout, res, true);</span><br><span class="line">            layoutResource = res.resourceId;</span><br><span class="line">        &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_ACTION_BAR)) != 0) &#123;</span><br><span class="line">            layoutResource = a.getResourceId(</span><br><span class="line">                    R.styleable.Window_windowActionBarFullscreenDecorLayout,</span><br><span class="line">                    R.layout.screen_action_bar);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            //最常用的Activity窗口修饰布局文件，有title</span><br><span class="line">            layoutResource = R.layout.screen_title;</span><br><span class="line">        &#125;</span><br><span class="line">        // System.out.println(&quot;Title!&quot;);</span><br><span class="line">    &#125; else if ((features &amp; (1 &lt;&lt; FEATURE_ACTION_MODE_OVERLAY)) != 0) &#123;</span><br><span class="line">        layoutResource = R.layout.screen_simple_overlay_action_mode;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        // Embedded, so no decoration is needed.</span><br><span class="line">        //最简单的Activity窗口修饰布局文件，无title</span><br><span class="line">        layoutResource = R.layout.screen_simple;</span><br><span class="line">        // System.out.println(&quot;Simple!&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mDecor.startChanging();</span><br><span class="line">    //该步骤很重要，将layoutResource资源文件包含的View树添加到decor中</span><br><span class="line">    mDecor.onResourcesLoaded(mLayoutInflater, layoutResource);</span><br><span class="line">    //寻找com.android.internal.R.id.content节点</span><br><span class="line">    ViewGroup contentParent = (ViewGroup)findViewById(ID_ANDROID_CONTENT);</span><br><span class="line">    if (contentParent == null) &#123;</span><br><span class="line">        throw new RuntimeException(&quot;Window couldn&apos;t find content container view&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if ((features &amp; (1 &lt;&lt; FEATURE_INDETERMINATE_PROGRESS)) != 0) &#123;</span><br><span class="line">        ProgressBar progress = getCircularProgressBar(false);</span><br><span class="line">        if (progress != null) &#123;</span><br><span class="line">            //设置进度条模式为indeterminate，</span><br><span class="line">            //该模式下进度不显示进度，只显示无限动画</span><br><span class="line">            progress.setIndeterminate(true);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if ((features &amp; (1 &lt;&lt; FEATURE_SWIPE_TO_DISMISS)) != 0) &#123;</span><br><span class="line">        //对于选择R.layout.screen_swipe_dismiss布局注册回调</span><br><span class="line">        registerSwipeCallbacks();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Remaining setup -- of background and title -- that only applies</span><br><span class="line">    // to top-level windows.</span><br><span class="line">    if (getContainer() == null) &#123;</span><br><span class="line">        final Drawable background;</span><br><span class="line">        if (mBackgroundResource != 0) &#123;</span><br><span class="line">            background = getContext().getDrawable(mBackgroundResource);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            background = mBackgroundDrawable;</span><br><span class="line">        &#125;</span><br><span class="line">        //设置背景</span><br><span class="line">        mDecor.setWindowBackground(background);</span><br><span class="line"></span><br><span class="line">        final Drawable frame;</span><br><span class="line">        if (mFrameResource != 0) &#123;</span><br><span class="line">            frame = getContext().getDrawable(mFrameResource);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            frame = null;</span><br><span class="line">        &#125;</span><br><span class="line">        mDecor.setWindowFrame(frame);</span><br><span class="line"></span><br><span class="line">        mDecor.setElevation(mElevation);</span><br><span class="line">        mDecor.setClipToOutline(mClipToOutline);</span><br><span class="line"></span><br><span class="line">        if (mTitle != null) &#123;</span><br><span class="line">            //设置标题</span><br><span class="line">            setTitle(mTitle);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        if (mTitleColor == 0) &#123;</span><br><span class="line">            //设置标题颜色</span><br><span class="line">            mTitleColor = mTextColor;</span><br><span class="line">        &#125;</span><br><span class="line">        setTitleColor(mTitleColor);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    mDecor.finishChanging();</span><br><span class="line"></span><br><span class="line">    return contentParent;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法代码量较多，主要是做了如下操作：</p>
+<ul>
+<li>Step1：从第4行到第205行，获取窗口style配置，并根据配置里的值判断是否显示标题栏，是否全屏，是否支持ActionBar浮动，动画效果等等</li>
+<li>Step2：从209行到271行，获取窗口的features，根据features值给容器DecorView添加id为layoutResource布局的根布局</li>
+<li>Step3：从273行到275行，传入LayoutInflater和指定的布局文件，通过inflate方法将布局文件解析成View，并添加到DecorView根布局当中</li>
+<li>Step4：277行，从根布局中查找id为com.android.internal.R.id.content的ViewGroup，也就是整个方法的返回值。</li>
+<li>Step5：278-333行，后续一系列操作，包括设置背景，标题，标题颜色等。</li>
+</ul>
+<p>看下Step2中比较重要的一步操作mDecor.onResourcesLoaded(mLayoutInflater, layoutResource)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">void onResourcesLoaded(LayoutInflater inflater, int layoutResource) &#123;</span><br><span class="line">        mStackId = getStackId();</span><br><span class="line"></span><br><span class="line">        if (mBackdropFrameRenderer != null) &#123;</span><br><span class="line">            loadBackgroundDrawablesIfNeeded();</span><br><span class="line">            mBackdropFrameRenderer.onResourcesLoaded(</span><br><span class="line">                    this, mResizingBackgroundDrawable, mCaptionBackgroundDrawable,</span><br><span class="line">                    mUserCaptionBackgroundDrawable, getCurrentColor(mStatusColorViewState),</span><br><span class="line">                    getCurrentColor(mNavigationColorViewState));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mDecorCaptionView = createDecorCaptionView(inflater);</span><br><span class="line">        final View root = inflater.inflate(layoutResource, null);</span><br><span class="line">        if (mDecorCaptionView != null) &#123;</span><br><span class="line">            if (mDecorCaptionView.getParent() == null) &#123;</span><br><span class="line">                addView(mDecorCaptionView,</span><br><span class="line">                        new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">            &#125;</span><br><span class="line">            mDecorCaptionView.addView(root,</span><br><span class="line">                    new ViewGroup.MarginLayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">        &#125; else &#123;</span><br><span class="line"></span><br><span class="line">            // Put it below the color views.</span><br><span class="line">            addView(root, 0, new ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT));</span><br><span class="line">        &#125;</span><br><span class="line">        mContentRoot = (ViewGroup) root;</span><br><span class="line">        initializeElevation();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>12行判断是否是浮动的窗口创建一个mDecorCaptionView ，13行将资源文件解析成View，之后指定布局的宽高为MATCH_PARENT，26行再把View赋给mContentRoot 。接下来，看看 id为layoutResource的布局到底实现了什么？以我们的代码为例，无标题，资源文件为R.layout.screen_simple(源码路径:platforms/android-24/data/res/layout/R.layout.screen_simple)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="line">&lt;!--</span><br><span class="line">/* //device/apps/common/assets/res/layout/screen_simple.xml</span><br><span class="line">**</span><br><span class="line">** Copyright 2006, The Android Open Source Project</span><br><span class="line">**</span><br><span class="line">** Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); </span><br><span class="line">** you may not use this file except in compliance with the License. </span><br><span class="line">** You may obtain a copy of the License at </span><br><span class="line">**</span><br><span class="line">**     http://www.apache.org/licenses/LICENSE-2.0 </span><br><span class="line">**</span><br><span class="line">** Unless required by applicable law or agreed to in writing, software </span><br><span class="line">** distributed under the License is distributed on an &quot;AS IS&quot; BASIS, </span><br><span class="line">** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. </span><br><span class="line">** See the License for the specific language governing permissions and </span><br><span class="line">** limitations under the License.</span><br><span class="line">*/</span><br><span class="line"></span><br><span class="line">This is an optimized layout for a screen, with the minimum set of features</span><br><span class="line">enabled.</span><br><span class="line">--&gt;</span><br><span class="line"></span><br><span class="line">&lt;LinearLayout xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;</span><br><span class="line">    android:layout_width=&quot;match_parent&quot;</span><br><span class="line">    android:layout_height=&quot;match_parent&quot;</span><br><span class="line">    android:fitsSystemWindows=&quot;true&quot;</span><br><span class="line">    android:orientation=&quot;vertical&quot;&gt;</span><br><span class="line">    &lt;ViewStub android:id=&quot;@+id/action_mode_bar_stub&quot;</span><br><span class="line">              android:inflatedId=&quot;@+id/action_mode_bar&quot;</span><br><span class="line">              android:layout=&quot;@layout/action_mode_bar&quot;</span><br><span class="line">              android:layout_width=&quot;match_parent&quot;</span><br><span class="line">              android:layout_height=&quot;wrap_content&quot;</span><br><span class="line">              android:theme=&quot;?attr/actionBarTheme&quot; /&gt;</span><br><span class="line">    &lt;FrameLayout</span><br><span class="line">         android:id=&quot;@android:id/content&quot;</span><br><span class="line">         android:layout_width=&quot;match_parent&quot;</span><br><span class="line">         android:layout_height=&quot;match_parent&quot;</span><br><span class="line">         android:foregroundInsidePadding=&quot;false&quot;</span><br><span class="line">         android:foregroundGravity=&quot;fill_horizontal|top&quot;</span><br><span class="line">         android:foreground=&quot;?android:attr/windowContentOverlay&quot; /&gt;</span><br><span class="line">&lt;/LinearLayout&gt;</span><br></pre></td></tr></table></figure>
+<p>结合hierarchyviewer图正好可以对应上面的布局</p>
+<p><a href="http://7xjvg5.com1.z0.glb.clouddn.com/hierarchyviewer2.jpg" target="_blank" rel="noopener"><img src="http://7xjvg5.com1.z0.glb.clouddn.com/hierarchyviewer2.jpg" alt="img"></a></p>
+<p>可以看到，我们啥也不干的情况下在我们的布局外面包裹着另外一层布局，一个LinearLayout包含了ViewStub 和FrameLayout，ViewStub 为懒加载默认不显示，id为content的FrameLayout作为我们布局文件的父布局，上面Step4查找该布局，之后作为整个generateLayout方法的返回值，而这里的mContentParent又在PhoneWindow的setContentView方法中作为布局填充的父容器，伪代码记忆如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public void setContentView(int layoutResID) &#123;</span><br><span class="line">        ......</span><br><span class="line">        if (mContentParent == null) &#123;</span><br><span class="line">            installDecor();</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">        mLayoutInflater.inflate(layoutResID, mContentParent); </span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">   private void installDecor() &#123;</span><br><span class="line">        ......</span><br><span class="line">        if (mDecor == null) &#123;</span><br><span class="line">            mDecor = generateDecor(-1);</span><br><span class="line">        &#125;</span><br><span class="line">        if (mContentParent == null) &#123;</span><br><span class="line">            mContentParent = generateLayout(mDecor);</span><br><span class="line">            ......</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="回调"><a href="#回调" class="headerlink" title="回调"></a>回调</h2><p>在PhoneWindow的setContentView方法最后会执行回调</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public void setContentView(int layoutResID) &#123;</span><br><span class="line">       ......</span><br><span class="line">        final Callback cb = getCallback();</span><br><span class="line">        if (cb != null &amp;&amp; !isDestroyed()) &#123;</span><br><span class="line">            cb.onContentChanged();</span><br><span class="line">        &#125;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的cb位于Windows.java中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">private Callback mCallback;</span><br><span class="line"></span><br><span class="line">public final Callback getCallback() &#123;</span><br><span class="line">    return mCallback;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public void setCallback(Callback callback) &#123;</span><br><span class="line">    mCallback = callback;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在Activity的attach方法中看到进行了设置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">final void attach(Context context, ActivityThread aThread,</span><br><span class="line">    ......</span><br><span class="line">    mWindow.setCallback(this);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>说明Activity中实现了该方法，onContentChanged方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">public void onContentChanged() &#123;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<p>竟然是个空方法，setContentView走完会执行该方法，因此我们可以把Activity的各种View的findViewById()方法等都可以放到该方法中，系统会帮忙回调。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>创建根视图DecorView对象mDecor</li>
+<li>根据程序中选择的Activity的Theme/Style等属性值为窗口添加布局属性和相应的修饰文件</li>
+<li>通过findViewById方法获取对应的根布局文件添加到mDecor</li>
+<li>通过inflate（加载xml文件）或addView（加载View）方法将Activity的布局文件添加到mContentParent区域(id为content的FrameLayout)</li>
+<li>回调Activity的onContentChanged方法</li>
+</ul>
+<h2 id="关系图"><a href="#关系图" class="headerlink" title="关系图"></a>关系图</h2><p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/relationship.jpg" alt="img"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/05/2017 movie list/" rel="next" title="2017 movie list">
+                <i class="fa fa-chevron-left"></i> 2017 movie list
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/17/Android LayoutInflater源码分析/" rel="prev" title="Android LayoutInflater源码分析">
+                Android LayoutInflater源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">2.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#hierarchyviewer"><span class="nav-number">3.</span> <span class="nav-text">hierarchyviewer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#setContentView"><span class="nav-number">4.</span> <span class="nav-text">setContentView</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#小节"><span class="nav-number">4.1.</span> <span class="nav-text">小节</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#installDecor方法分析"><span class="nav-number">5.</span> <span class="nav-text">installDecor方法分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#generateDecor方法分析"><span class="nav-number">6.</span> <span class="nav-text">generateDecor方法分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#generateLayout方法分析"><span class="nav-number">7.</span> <span class="nav-text">generateLayout方法分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回调"><span class="nav-number">8.</span> <span class="nav-text">回调</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关系图"><span class="nav-number">10.</span> <span class="nav-text">关系图</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Dagger2," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述最近公司的项目是用mvp+dagger2搭的框架，由于之前没接触过dagger2，改bug和做需求总是一脸懵逼，看了些文档介绍，和大多数学习者一样从Dependency Injection、注解概念等等开始了解，然后敲代码上手，在此记录下学习心得。既然是入门，那些概念和注解的历史就不介绍了，Google一下你就知道，直接介绍最最基本的使用以及具体实现原理。">
+<meta name="keywords" content="Dagger2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dagger2从入门到补胎(一)">
+<meta property="og:url" content="http://yoursite.com/2017/11/15/Dagger2从入门到补胎(一)/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述最近公司的项目是用mvp+dagger2搭的框架，由于之前没接触过dagger2，改bug和做需求总是一脸懵逼，看了些文档介绍，和大多数学习者一样从Dependency Injection、注解概念等等开始了解，然后敲代码上手，在此记录下学习心得。既然是入门，那些概念和注解的历史就不介绍了，Google一下你就知道，直接介绍最最基本的使用以及具体实现原理。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_02.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_01.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_07.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_08.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_3.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_05.jpeg">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_08.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_2.jpeg">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_3.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_2.png">
+<meta property="og:updated_time" content="2017-11-17T06:39:27.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dagger2从入门到补胎(一)">
+<meta name="twitter:description" content="概述最近公司的项目是用mvp+dagger2搭的框架，由于之前没接触过dagger2，改bug和做需求总是一脸懵逼，看了些文档介绍，和大多数学习者一样从Dependency Injection、注解概念等等开始了解，然后敲代码上手，在此记录下学习心得。既然是入门，那些概念和注解的历史就不介绍了，Google一下你就知道，直接介绍最最基本的使用以及具体实现原理。">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/11/15/Dagger2从入门到补胎(一)/"/>
+
+
+
+
+
+  <title>Dagger2从入门到补胎(一) | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/15/Dagger2从入门到补胎(一)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Dagger2从入门到补胎(一)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-15T00:00:00+08:00">
+                2017-11-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/11/15/Dagger2从入门到补胎(一)/" class="leancloud_visitors" data-flag-title="Dagger2从入门到补胎(一)">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>最近公司的项目是用mvp+dagger2搭的框架，由于之前没接触过dagger2，改bug和做需求总是一脸懵逼，看了些文档介绍，和大多数学习者一样从Dependency Injection、注解概念等等开始了解，然后敲代码上手，在此记录下学习心得。既然是入门，那些概念和注解的历史就不介绍了，Google一下你就知道，直接介绍最最基本的使用以及具体实现原理。</p>
+<a id="more"></a>
+<h3 id="Inject、-Component"><a href="#Inject、-Component" class="headerlink" title="@Inject、@Component"></a>@Inject、@Component</h3><p>先看一个例子，MainActivity依赖Province，Province依赖City，City依赖Street；</p>
+<h4 id="使用前"><a href="#使用前" class="headerlink" title="使用前"></a>使用前</h4><p>Street.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public class Street &#123;</span><br><span class="line">    public Street()&#123;&#125;</span><br><span class="line"></span><br><span class="line">    public String show()&#123;</span><br><span class="line">        return &quot;人民南路&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>City.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">public class City &#123;</span><br><span class="line">    public Street street;</span><br><span class="line">    public City(Street street) &#123;</span><br><span class="line">        this.street = street;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String show() &#123;</span><br><span class="line">        return &quot;成都市&quot; + street.show();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Province.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public class Province &#123;</span><br><span class="line">    public City city;</span><br><span class="line"></span><br><span class="line">    public Province(City city) &#123;</span><br><span class="line">        this.city = city;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String showAddress() &#123;</span><br><span class="line">        return &quot;四川省&quot; + city.show();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>MainActivity.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">public class MainActivity extends AppCompatActivity &#123;</span><br><span class="line">    public Street street;</span><br><span class="line">    public City city;</span><br><span class="line">    public Province province;</span><br><span class="line">    @Override</span><br><span class="line">    protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">        street = new Street();</span><br><span class="line">        city = new City(street);</span><br><span class="line">        province = new Province(city);</span><br><span class="line">        Log.d(&quot;hcy&quot;, &quot;onCreate: &quot; + province.showAddress());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，为了获取地址信息，在代码中需要实例化各种依赖到的对象，一旦依赖过多就容易影响代码阅读，那么配合使用@Inject和@Component又是怎样的呢？</p>
+<h4 id="使用后"><a href="#使用后" class="headerlink" title="使用后"></a>使用后</h4><p>1.首先在build.gradle中添加依赖</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">  compile &apos;com.google.dagger:dagger-android:2.11&apos;</span><br><span class="line">  compile &apos;com.google.dagger:dagger-android-support:2.11&apos; // if you use the support libraries</span><br><span class="line">  annotationProcessor &apos;com.google.dagger:dagger-android-processor:2.11&apos;</span><br><span class="line">  annotationProcessor &apos;com.google.dagger:dagger-compiler:2.11&apos;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Street.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">public class Street &#123;</span><br><span class="line">    @Inject</span><br><span class="line">    public Street()&#123;&#125;</span><br><span class="line"></span><br><span class="line">    public String show()&#123;</span><br><span class="line">        return &quot;人民南路&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2.需要依赖的成员和提供依赖的成员构造函数用@Inject标注</p>
+<p>City.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public class City &#123;</span><br><span class="line">    @Inject</span><br><span class="line">    public Street street;</span><br><span class="line">    @Inject</span><br><span class="line">    public City(Street street) &#123;</span><br><span class="line">        this.street = street;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String show() &#123;</span><br><span class="line">        return &quot;成都市&quot; + street.show();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Province.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class Province &#123;</span><br><span class="line">    @Inject</span><br><span class="line">    public City city;</span><br><span class="line"></span><br><span class="line">    @Inject</span><br><span class="line">    public Province(City city) &#123;</span><br><span class="line">        this.city = city;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String showAddress() &#123;</span><br><span class="line">        return &quot;四川省&quot; + city.show();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>3.需要额外加一个接口MainActivityComponent.java，用@Component标注</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Component</span><br><span class="line">public interface MainActivityComponent &#123;</span><br><span class="line">    void inject(MainActivity activity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4.执行<strong>DaggerMainActivityComponent.create().inject(this)</strong></p>
+<p>此时的MainActivity.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public class MainActivity extends AppCompatActivity &#123;</span><br><span class="line">    @Inject</span><br><span class="line">    public Province province;</span><br><span class="line">    @Override</span><br><span class="line">    protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">        //in Android Studio, select Build &gt; Rebuild Project</span><br><span class="line">        DaggerMainActivityComponent.create().inject(this);</span><br><span class="line">        Log.d(&quot;hcy&quot;, &quot;onCreate: &quot; + province.showAddress());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>前后的打印是一致的，可以看到MainActivity的中原本需要实例化对象的那些代码现在可以省略了，有助于我们更好地关注业务实现。</p>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>回顾下使用注解的步骤:</p>
+<p>1.build.gradle中添加dagger2依赖</p>
+<p>2.使用@Inject标注在构造函数和被引用的成员变量上</p>
+<p>3.新建MainActivityComponent接口，并用@Component标注</p>
+<p>4.在MainActivity中执行<strong>DaggerMainActivityComponent.create().inject(this)</strong>；(第一次需Rebuild Project)</p>
+<h4 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h4><p>我们在MainaActivity中加了<strong>DaggerMainActivityComponent.create().inject(this)</strong>这句代码替换了之前的一些实例化的操作，那么这句代码具体做了哪些工作？原来Dagger2会在编译过程中生成对应的依赖项，这些依赖项在Android Studio该路径下，如图所示：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_1.png" style="zoom:50%"></p>
+<p>DaggerMainActivityComponent.create()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">public static MainActivityComponent create() &#123;  </span><br><span class="line">  return builder().build();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static Builder builder() &#123;  </span><br><span class="line">    return new Builder();</span><br><span class="line">&#125;</span><br><span class="line">  </span><br><span class="line">public static final class Builder &#123;</span><br><span class="line">    private Builder() &#123;  </span><br><span class="line">    &#125;</span><br><span class="line">  </span><br><span class="line">    public MainActivityComponent build() &#123;  </span><br><span class="line">      return new DaggerMainActivityComponent(this);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，不管是通过builder().build()还是create()，最后都会调用DaggerMainActivityComponent构造函数；在通过源码阅读后，可以将整个过程分为两步，分别是initialize()和inject()</p>
+<h5 id="initialize"><a href="#initialize" class="headerlink" title="initialize()"></a>initialize()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">private DaggerMainActivityComponent(Builder builder) &#123;  </span><br><span class="line">  assert builder != null;</span><br><span class="line">  initialize(builder);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"> private void initialize(final Builder builder) &#123;</span><br><span class="line">    this.cityMembersInjector = City_MembersInjector.create(Street_Factory.create());//注释1</span><br><span class="line">    this.cityProvider = City_Factory.create(cityMembersInjector, Street_Factory.create());//注释2</span><br><span class="line">    this.provinceMembersInjector = Province_MembersInjector.create(cityProvider);//注释3</span><br><span class="line">    this.provinceProvider = Province_Factory.create(provinceMembersInjector, cityProvider);//注释4</span><br><span class="line">    this.mainActivityMembersInjector = MainActivity_MembersInjector.create(provinceProvider);//注释5</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>在initialize()方法中对成员赋值，这里的成员分为两类，分别以_MembersInjector和_Factory为后缀；Xx_MembersInjector可以理解为注入器，用来实现Xx与内部成员的依赖:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface MembersInjector&lt;T&gt; &#123;</span><br><span class="line">  void injectMembers(T instance);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Xx_Factory是创建Xx的工厂:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public interface Provider&lt;T&gt; &#123;  </span><br><span class="line">    T get();</span><br><span class="line">&#125;</span><br><span class="line">public interface Factory&lt;T&gt; extends Provider&lt;T&gt; &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里先记住两者的功能，具体后面会分析</p>
+<h5 id="注释1"><a href="#注释1" class="headerlink" title="注释1"></a>注释1</h5><p>先看下Street_Factory.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public final class Street_Factory implements Factory&lt;Street&gt; &#123;</span><br><span class="line">  private static final Street_Factory INSTANCE = new Street_Factory();</span><br><span class="line"></span><br><span class="line">  @Override</span><br><span class="line">  public Street get() &#123;</span><br><span class="line">    return new Street();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static Factory&lt;Street&gt; create() &#123;</span><br><span class="line">    return INSTANCE;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码很简单，通过恶汉式创建了一个Street_Factory单例(这里的源码可能会有不同，之前看过一版是通过枚举创建的单例)；再看下City_MembersInjector.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">public final class City_MembersInjector implements MembersInjector&lt;City&gt; &#123;</span><br><span class="line">  private final Provider&lt;Street&gt; streetProvider;</span><br><span class="line"></span><br><span class="line">  public City_MembersInjector(Provider&lt;Street&gt; streetProvider) &#123;</span><br><span class="line">    assert streetProvider != null;</span><br><span class="line">    this.streetProvider = streetProvider;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public static MembersInjector&lt;City&gt; create(Provider&lt;Street&gt; streetProvider) &#123;</span><br><span class="line">    return new City_MembersInjector(streetProvider);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  @Override</span><br><span class="line">  public void injectMembers(City instance) &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      throw new NullPointerException(&quot;Cannot inject members into a null reference&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    instance.street = streetProvider.get();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>City_MembersInjector只是将传进来的Street_Factory赋值给自己的成员变量；</p>
+<h5 id="注释2"><a href="#注释2" class="headerlink" title="注释2"></a>注释2</h5><p>后面的功能都一样，就用伪代码列出：</p>
+<p>City_Factory.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public final class City_Factory implements Factory&lt;City&gt; &#123;</span><br><span class="line">  public City_Factory(...省略参数)&#123;</span><br><span class="line">    this.city_MembersInjector = city_MembersInjector;</span><br><span class="line">    this.Street_Factory = street_Factory;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="注释3"><a href="#注释3" class="headerlink" title="注释3"></a>注释3</h5><p>Province_MembersInjector.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public final class Province_MembersInjector implements MembersInjector&lt;Province&gt; &#123;</span><br><span class="line">  public Province_MembersInjector(...省略参数)&#123;</span><br><span class="line">    this.city_Factory = city_Factory</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="注释4"><a href="#注释4" class="headerlink" title="注释4"></a>注释4</h5><p>Province_Factory.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public final class Province_Factory implements Factory&lt;Province&gt; &#123;</span><br><span class="line">  public Province_Factory(...省略参数)&#123;</span><br><span class="line">    this.province_MembersInjector = province_MembersInjector</span><br><span class="line">    this.city_Factory = city_Factory</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="注释5"><a href="#注释5" class="headerlink" title="注释5"></a>注释5</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">public final class MainActivity_MembersInjector implements MembersInjector&lt;MainActivity&gt; &#123;</span><br><span class="line">  private final Provider&lt;Province&gt; provinceProvider;</span><br><span class="line"></span><br><span class="line">  public MainActivity_MembersInjector(Provider&lt;Province&gt; provinceProvider) &#123;</span><br><span class="line">    this.province_Factory = provinceProvider;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>到此目标工厂和注入器都已经创建完成，但是此时目标对象和依赖关系还没产生。</p>
+<h4 id="inject"><a href="#inject" class="headerlink" title="inject()"></a>inject()</h4><p>inject()通过调用injectMembers()完成真正目标对象实例化以及依赖操作，代码也没多少，就把整个完整的过程涉及到的代码贴出来:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">//DaggerMainActivityComponent.java</span><br><span class="line">public void inject(MainActivity activity) &#123;</span><br><span class="line">    mainActivityMembersInjector.injectMembers(activity);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">//MainActivity_MembersInjector.java  </span><br><span class="line">public void injectMembers(MainActivity instance) &#123;</span><br><span class="line">  if (instance == null) &#123;</span><br><span class="line">    throw new NullPointerException(&quot;Cannot inject members into a null reference&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  instance.province = provinceProvider.get();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//Province_Factory.java</span><br><span class="line">public Province get() &#123;</span><br><span class="line">    return MembersInjectors.injectMembers(</span><br><span class="line">        provinceMembersInjector, new Province(cityProvider.get()));</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">//Province_MembersInjector.java  </span><br><span class="line">public void injectMembers(Province instance) &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      throw new NullPointerException(&quot;Cannot inject members into a null reference&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    instance.city = cityProvider.get();</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">//City_Factory.java</span><br><span class="line">public City get() &#123;</span><br><span class="line">    return MembersInjectors.injectMembers(cityMembersInjector, new City(streetProvider.get()));</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">//City_MembersInjector.java</span><br><span class="line">public void injectMembers(City instance) &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      throw new NullPointerException(&quot;Cannot inject members into a null reference&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    instance.street = streetProvider.get();</span><br><span class="line">  &#125;</span><br><span class="line">//Street_Factory.java</span><br><span class="line">public Street get() &#123;</span><br><span class="line">    return new Street();</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到inject()和initialize()刚好是相反的过程，直到找到依赖的源头完成源头对象的实例化，即这里的Street_Factory的get()方法的返回值；在Street实例化完成之后返回给City完成City实例化，City实例化完之后对自己的成员重新赋值了一遍，即产生依赖关系：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">//City_MembersInjector.java</span><br><span class="line">public void injectMembers(City instance) &#123;</span><br><span class="line">  if (instance == null) &#123;</span><br><span class="line">    throw new NullPointerException(&quot;Cannot inject members into a null reference&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  instance.street = streetProvider.get();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>instance.street赋值的时候调用了streetProvider.get()，这是一个怎样的过程呢，还是画个图吧</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_02.png" style="zoom:30%"></p>
+<p>step1的时候已经完成了Street和City的实例化，接着执行instance.street = streetProvider.get()，这句代码即下面step2的过程：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_01.png" style="zoom:30%"></p>
+<p>红色的就变成垃圾了，所以在这个过程中Street被new了两次；继续分析创建Province以及建立依赖的过程：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_07.png" style="zoom:30%"></p>
+<p>可以看到在整个过程中Street其实new了4次，如果依赖更多的话(比如最外层再加个Country)，Street在内存中被new的次数也会*2，不过过程中这些对象最终都会变成垃圾被回收(总觉得这是额外的开销，依赖多了岂不是编译就慢了？)，而不用dagger2只要new一次就可以了(如下图)，但是两者最终都是一条依赖链</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_08.png" style="zoom:30%"></p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>整个流程：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_3.png" style="zoom:30%"></p>
+<p>黑色的流程线是initialize()的过程，用来创建目标实例的工厂和注入器；红色流程线是inject()/injectMembers()的过程，用来创建目标实例以及实现依赖。最后在回过头来看下@inject和@component这两个标注，可以得出一些结论：</p>
+<p>1.若一个类(Xx)的构造函数被@inject标注，则该类编译时会产生Xx_Factory；</p>
+<p>2.若一个类中的成员变量被@inject标注，则该类编译时会产生Xx_MembersInjector；</p>
+<p>3.@Component标注的接口(Xx)在编译时生成DaggerXx，负责将上面两个联系起来。</p>
+<p>一个图</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_05.jpeg" style="zoom:100%"></p>
+<h3 id="Module和-Provides"><a href="#Module和-Provides" class="headerlink" title="@Module和@Provides"></a>@Module和@Provides</h3><p>学习这两个注解，配合@Inject和@Component使用完成和上面一样的功能</p>
+<h4 id="使用前-1"><a href="#使用前-1" class="headerlink" title="使用前"></a>使用前</h4><p>和上面的使用前代码一致</p>
+<h4 id="使用后-1"><a href="#使用后-1" class="headerlink" title="使用后"></a>使用后</h4><p>1.创建一个Module.java，这里取名BeanModule.java(想怎么取名字都可以，比如周杰伦.java，但是最好别这么干，官方推荐以Module为后缀)，并用@Module标注，创建目标实例的方法用@Provides标注(官方推荐方法名以provide为前缀)如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">@Module</span><br><span class="line">public class BeanModule &#123;</span><br><span class="line">    @Provides</span><br><span class="line">    Street providerStreet() &#123;</span><br><span class="line">        return new Street();</span><br><span class="line">    &#125;</span><br><span class="line">    @Provides</span><br><span class="line">    City providerCity(Street street) &#123;</span><br><span class="line">        return new City(street);</span><br><span class="line">    &#125;</span><br><span class="line">    @Provides</span><br><span class="line">    Province providerProvince(City city) &#123;</span><br><span class="line">        return new Province(city);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>2.修改上面的MainActivityComponent.java接口，@Component后面多了一个配置，如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">@Component(modules = BeanModule.class)</span><br><span class="line">public interface MainActivityComponent &#123;</span><br><span class="line">    void inject(MainActivity activity);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>modules的作用相当于告诉Component，当你需要创建对象的时候就到我这里来拿。MainActivity不变，运行后的效果和上面一毛一样。</p>
+<h4 id="源码分析-1"><a href="#源码分析-1" class="headerlink" title="源码分析"></a>源码分析</h4><p>先看编译过程生成的文件：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_1.png" style="zoom:50%"></p>
+<p>同样从<strong>DaggerMainActivityComponent.create().inject(this)</strong>，这句代码开始分析</p>
+<p>DaggerMainActivityComponent.create()</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">public static MainActivityComponent create() &#123;</span><br><span class="line">  return new Builder().build();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static final class Builder &#123;</span><br><span class="line">    private BeanModule beanModule;</span><br><span class="line"></span><br><span class="line">    private Builder() &#123;&#125;</span><br><span class="line"></span><br><span class="line">    public MainActivityComponent build() &#123;</span><br><span class="line">      if (beanModule == null) &#123;</span><br><span class="line">        this.beanModule = new BeanModule();</span><br><span class="line">      &#125;</span><br><span class="line">      return new DaggerMainActivityComponent(this);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Builder beanModule(BeanModule beanModule) &#123;</span><br><span class="line">      this.beanModule = Preconditions.checkNotNull(beanModule);</span><br><span class="line">      return this;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>不管是通过builder().build()还是create()，最后都会调用DaggerMainActivityComponent构造函数；和上面对比这里多了一步，那就是<strong>创建了BeanModule实例</strong>，还是把这个过程分成两步：initialize()和inject()</p>
+<h5 id="initialize-1"><a href="#initialize-1" class="headerlink" title="initialize()"></a>initialize()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">private DaggerMainActivityComponent(Builder builder) &#123;</span><br><span class="line">    assert builder != null;</span><br><span class="line">    initialize(builder);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">private void initialize(final Builder builder) &#123;</span><br><span class="line">  this.providerStreetProvider = BeanModule_ProviderStreetFactory.create(builder.beanModule);</span><br><span class="line"></span><br><span class="line">  this.providerCityProvider =</span><br><span class="line">      BeanModule_ProviderCityFactory.create(builder.beanModule, providerStreetProvider);</span><br><span class="line"></span><br><span class="line">  this.providerProvinceProvider =</span><br><span class="line">      BeanModule_ProviderProvinceFactory.create(builder.beanModule, providerCityProvider);</span><br><span class="line"></span><br><span class="line">  this.mainActivityMembersInjector =</span><br><span class="line">      MainActivity_MembersInjector.create(providerProvinceProvider);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>initialize()方法对自己的成员赋值，创建了目标对象工厂和注入器，在这里的注入器只有一个<strong>MainActivity_MembersInjector</strong>；</p>
+<h5 id="inject-1"><a href="#inject-1" class="headerlink" title="inject()"></a>inject()</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">//DaggerMainActivityComponent.java</span><br><span class="line">public void inject(MainActivity activity) &#123;</span><br><span class="line">  mainActivityMembersInjector.injectMembers(activity);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//MainActivity_MembersInjector.java</span><br><span class="line">public void injectMembers(MainActivity instance) &#123;</span><br><span class="line">    if (instance == null) &#123;</span><br><span class="line">      throw new NullPointerException(&quot;Cannot inject members into a null reference&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    instance.province = provinceProvider.get();</span><br><span class="line">  &#125;</span><br><span class="line">//...省略中间的部分get()</span><br><span class="line">//BeanModule_ProviderStreetFactory.java</span><br><span class="line">public Street get() &#123;</span><br><span class="line">    return Preconditions.checkNotNull(</span><br><span class="line">        module.providerStreet(), &quot;Cannot return null from a non-@Nullable @Provides method&quot;);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>这里的inject()和injectMembers()的工作和上面是一样的，调用BeaModule中的方法创建需要的实例，若该实例在创建时依赖其他实例，则调用BeaModule中的对应方法先创建依赖实例，直到找到源头，最大的区别就是在Xx_Factory中少了一步重新创建依赖的过程。用一张图来表示创建的过程就是</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_08.png" style="zoom:30%"></p>
+<p>可以看到，相比于上面那种在过程中new很多实例的做法，这种做法显然更加高效。多说一点，在这些生成的XX_Factory中还多了一个静态方法，如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//BeanModule_ProviderStreetFactory.java</span><br><span class="line">/** Proxies &#123;@link BeanModule#providerStreet()&#125;. */</span><br><span class="line">  public static Street proxyProviderStreet(BeanModule instance) &#123;</span><br><span class="line">    return instance.providerStreet();</span><br><span class="line">  &#125;</span><br><span class="line">//BeanModule_ProviderProvinceFactory.java</span><br><span class="line">/** Proxies &#123;@link BeanModule#providerProvince(City)&#125;. */</span><br><span class="line">public static Province proxyProviderProvince(BeanModule instance, City city) &#123;</span><br><span class="line">  return instance.providerProvince(city);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因此我们可以在MainActivity直接通过类名调用创建实例。</p>
+<p>用图来表示@Module、@Providers、@Component、@Inject之间的联系：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_2.jpeg" style="zoom:70%"></p>
+<h2 id="Why"><a href="#Why" class="headerlink" title="Why"></a>Why</h2><p>既然用@Inject和@Component就能够完成的功能，为啥我还要多写那些Module类和provider方法，别跟我说是因为编译过程中比较费时？原来@Inject并不是万能的，<a href="https://google.github.io/dagger/users-guide.html" target="_blank" rel="noopener">官网</a>的介绍:</p>
+<blockquote>
+<p>But <code>@Inject</code> doesn’t work everywhere:</p>
+<ul>
+<li>Interfaces can’t be constructed.</li>
+<li>Third-party classes can’t be annotated.</li>
+<li>Configurable objects must be configured!</li>
+</ul>
+</blockquote>
+<p>如果我们要注入的对象是个接口，接口不能被实例化；或者是我们要注入的对象是第三方库，我们没法把@Inject标注在三方库的构造函数上，真是这样的么？就拿接口举例：</p>
+<p>改改上面的例子，添加一个IShow接口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public interface IShow &#123;</span><br><span class="line">    String show();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>修改City.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class City implements IShow &#123;</span><br><span class="line">    @Inject</span><br><span class="line">    public Street street;</span><br><span class="line"></span><br><span class="line">    @Inject</span><br><span class="line">    public City(Street street) &#123;</span><br><span class="line">        this.street = street;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String show() &#123;</span><br><span class="line">        return &quot;成都市&quot; + street.show();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>修改Province.java，让它接收一个接口</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public class Province &#123;</span><br><span class="line">    @Inject</span><br><span class="line">    public IShow city;</span><br><span class="line"></span><br><span class="line">    @Inject</span><br><span class="line">    public Province(IShow city) &#123;</span><br><span class="line">        this.city = city;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String showAddress() &#123;</span><br><span class="line">        return &quot;四川省&quot; + city.show();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>MainActivity不变，跑起来果然GG了</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_3.png" style="zoom:70%"></p>
+<p>而配合使用@Module和@Provides则不会出现这种情况。问题又来了，如果依赖的提供方同时存在以@Inject标注和以@Module、@Providers标注，会找哪个？回到代码中，把两种写法都补充完整，要回答这个问题还是只有看源码了，通过编译可以看到生成的文件</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/dagger2_0_2.png" style="zoom:50%"></p>
+<p>这里把两个方案都导进来了，随时待命，再看下DaggerMainActivityComponent.java的initialize()方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">private void initialize(final Builder builder) &#123;</span><br><span class="line"></span><br><span class="line">  this.providerStreetProvider = BeanModule_ProviderStreetFactory.create(builder.beanModule);</span><br><span class="line"></span><br><span class="line">  this.providerCityProvider =</span><br><span class="line">      BeanModule_ProviderCityFactory.create(builder.beanModule, providerStreetProvider);</span><br><span class="line"></span><br><span class="line">  this.providerProvinceProvider =</span><br><span class="line">      BeanModule_ProviderProvinceFactory.create(builder.beanModule, providerCityProvider);</span><br><span class="line"></span><br><span class="line">  this.mainActivityMembersInjector =</span><br><span class="line">      MainActivity_MembersInjector.create(providerProvinceProvider);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以发现和上面分析@Module、@Providers的源码是一样的，之后的流程当然也一样。因此如果两种同时存在，会选择@Module、@Providers，而另一种只是个“备胎”…</p>
+<h2 id="学习资料"><a href="#学习资料" class="headerlink" title="学习资料"></a>学习资料</h2><p>当然dagger2还有很多很强大的功能，待续</p>
+<p><a href="https://github.com/codepath/android_guides/wiki/Dependency-Injection-with-Dagger-2" target="_blank" rel="noopener">github dagger介绍</a></p>
+<p><a href="https://google.github.io/dagger/android.html" target="_blank" rel="noopener">dagger官网</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Dagger2/" rel="tag"># Dagger2</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/12/Java执行顺序/" rel="next" title="Java执行顺序">
+                <i class="fa fa-chevron-left"></i> Java执行顺序
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/11/16/Dagger2从入门到补胎(二)/" rel="prev" title="Dagger2从入门到补胎(二)">
+                Dagger2从入门到补胎(二) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Inject、-Component"><span class="nav-number">1.1.</span> <span class="nav-text">@Inject、@Component</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用前"><span class="nav-number">1.1.1.</span> <span class="nav-text">使用前</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用后"><span class="nav-number">1.1.2.</span> <span class="nav-text">使用后</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#小结"><span class="nav-number">1.1.3.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码分析"><span class="nav-number">1.1.4.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#initialize"><span class="nav-number">1.1.4.1.</span> <span class="nav-text">initialize()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#注释1"><span class="nav-number">1.1.4.2.</span> <span class="nav-text">注释1</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#注释2"><span class="nav-number">1.1.4.3.</span> <span class="nav-text">注释2</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#注释3"><span class="nav-number">1.1.4.4.</span> <span class="nav-text">注释3</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#注释4"><span class="nav-number">1.1.4.5.</span> <span class="nav-text">注释4</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#注释5"><span class="nav-number">1.1.4.6.</span> <span class="nav-text">注释5</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#inject"><span class="nav-number">1.1.5.</span> <span class="nav-text">inject()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">1.1.6.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Module和-Provides"><span class="nav-number">1.2.</span> <span class="nav-text">@Module和@Provides</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用前-1"><span class="nav-number">1.2.1.</span> <span class="nav-text">使用前</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用后-1"><span class="nav-number">1.2.2.</span> <span class="nav-text">使用后</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#源码分析-1"><span class="nav-number">1.2.3.</span> <span class="nav-text">源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#initialize-1"><span class="nav-number">1.2.3.1.</span> <span class="nav-text">initialize()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#inject-1"><span class="nav-number">1.2.3.2.</span> <span class="nav-text">inject()</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why"><span class="nav-number">2.</span> <span class="nav-text">Why</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#学习资料"><span class="nav-number">3.</span> <span class="nav-text">学习资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述在Android中所有布局或者控件都直接或间接继承至View，因此它们拥有相同的绘制机制。以前的学习经验知道View在绘制过程中会经过measure、layout、draw三个流程，measure负责测量View的宽高，layout负责确定View在父容器中的位置，draw负责将View绘制到屏幕上。上篇文章分析到DecorView的绘制从ViewRootImpl类中的performTrave">
+<meta name="keywords" content="Android">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android View绘制源码分析--Measure">
+<meta property="og:url" content="http://yoursite.com/2017/05/25/Android View绘制源码分析--Measure/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述在Android中所有布局或者控件都直接或间接继承至View，因此它们拥有相同的绘制机制。以前的学习经验知道View在绘制过程中会经过measure、layout、draw三个流程，measure负责测量View的宽高，layout负责确定View在父容器中的位置，draw负责将View绘制到屏幕上。上篇文章分析到DecorView的绘制从ViewRootImpl类中的performTrave">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/initView1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/initView1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/initView2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/ViewMeasure.png">
+<meta property="og:updated_time" content="2017-10-12T07:32:34.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android View绘制源码分析--Measure">
+<meta name="twitter:description" content="概述在Android中所有布局或者控件都直接或间接继承至View，因此它们拥有相同的绘制机制。以前的学习经验知道View在绘制过程中会经过measure、layout、draw三个流程，measure负责测量View的宽高，layout负责确定View在父容器中的位置，draw负责将View绘制到屏幕上。上篇文章分析到DecorView的绘制从ViewRootImpl类中的performTrave">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/initView1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/05/25/Android View绘制源码分析--Measure/"/>
+
+
+
+
+
+  <title>Android View绘制源码分析--Measure | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/05/25/Android View绘制源码分析--Measure/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android View绘制源码分析--Measure</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-25T00:00:00+08:00">
+                2017-05-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/05/25/Android View绘制源码分析--Measure/" class="leancloud_visitors" data-flag-title="Android View绘制源码分析--Measure">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>在Android中所有布局或者控件都直接或间接继承至View，因此它们拥有相同的绘制机制。以前的学习经验知道View在绘制过程中会经过measure、layout、draw三个流程，measure负责测量View的宽高，layout负责确定View在父容器中的位置，draw负责将View绘制到屏幕上。上篇文章分析到DecorView的绘制从ViewRootImpl类中的performTraversals开始，这篇主要分析View绘制流程中的measure部分。</p>
+<a id="more"></a>
+<h2 id="ViewRootImpl-performTraversals"><a href="#ViewRootImpl-performTraversals" class="headerlink" title="ViewRootImpl performTraversals()"></a>ViewRootImpl performTraversals()</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/ViewRootImpl.java</span><br><span class="line">    private void performTraversals() &#123;</span><br><span class="line">        // cache mView since it is used so much below...</span><br><span class="line">        final View host = mView;</span><br><span class="line">        ......</span><br><span class="line">        WindowManager.LayoutParams lp = mWindowAttributes;</span><br><span class="line">        ......</span><br><span class="line">        int childWidthMeasureSpec = getRootMeasureSpec(mWidth, lp.width);</span><br><span class="line">        int childHeightMeasureSpec = getRootMeasureSpec(mHeight, lp.height);</span><br><span class="line">        // Ask host how big it wants to be</span><br><span class="line">        performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">        ......</span><br><span class="line">        performLayout(lp, mWidth, mHeight);</span><br><span class="line">        ......</span><br><span class="line">        performDraw();</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>查看这里的getRootMeasureSpec方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/ViewRootImpl .java</span><br><span class="line">    /**</span><br><span class="line">     * Figures out the measure spec for the root view in a window based on it&apos;s</span><br><span class="line">     * layout params.</span><br><span class="line">     *</span><br><span class="line">     * @param windowSize</span><br><span class="line">     *            The available width or height of the window</span><br><span class="line">     *</span><br><span class="line">     * @param rootDimension</span><br><span class="line">     *            The layout params for one dimension (width or height) of the</span><br><span class="line">     *            window.</span><br><span class="line">     *</span><br><span class="line">     * @return The measure spec to use to measure the root view.</span><br><span class="line">     */</span><br><span class="line">    private static int getRootMeasureSpec(int windowSize, int rootDimension) &#123;</span><br><span class="line">        int measureSpec;</span><br><span class="line">        switch (rootDimension) &#123;</span><br><span class="line"></span><br><span class="line">        case ViewGroup.LayoutParams.MATCH_PARENT:</span><br><span class="line">            // Window can&apos;t resize. Force root view to be windowSize.</span><br><span class="line">            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.EXACTLY);</span><br><span class="line">            break;</span><br><span class="line">        case ViewGroup.LayoutParams.WRAP_CONTENT:</span><br><span class="line">            // Window can resize. Set max size for root view.</span><br><span class="line">            measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.AT_MOST);</span><br><span class="line">            break;</span><br><span class="line">        default:</span><br><span class="line">            // Window wants to be an exact size. Force root view to be that size.</span><br><span class="line">            measureSpec = MeasureSpec.makeMeasureSpec(rootDimension, MeasureSpec.EXACTLY);</span><br><span class="line">            break;</span><br><span class="line">        &#125;</span><br><span class="line">        return measureSpec;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>根据注释可知，该方法作用是根据根视图的布局参数推算出的其测量规格，这里的第二个参数传的是DecorView的LayoutParam对应的宽高，由之前的文章分析可知DecorView在生成布局时指定的宽高均为MATCH_PARENT，满足第一个分支，通过MeasureSpec的makeMeasureSpec方法生成测量规格并返回，查看该方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/View.java</span><br><span class="line">        /**</span><br><span class="line">         * Creates a measure specification based on the supplied size and mode.</span><br><span class="line">         *</span><br><span class="line">         * The mode must always be one of the following:</span><br><span class="line">         * &lt;ul&gt;</span><br><span class="line">         *  &lt;li&gt;&#123;@link android.view.View.MeasureSpec#UNSPECIFIED&#125;&lt;/li&gt;</span><br><span class="line">         *  &lt;li&gt;&#123;@link android.view.View.MeasureSpec#EXACTLY&#125;&lt;/li&gt;</span><br><span class="line">         *  &lt;li&gt;&#123;@link android.view.View.MeasureSpec#AT_MOST&#125;&lt;/li&gt;</span><br><span class="line">         * &lt;/ul&gt;</span><br><span class="line">         *</span><br><span class="line">         * &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; On API level 17 and lower, makeMeasureSpec&apos;s</span><br><span class="line">         * implementation was such that the order of arguments did not matter</span><br><span class="line">         * and overflow in either value could impact the resulting MeasureSpec.</span><br><span class="line">         * &#123;@link android.widget.RelativeLayout&#125; was affected by this bug.</span><br><span class="line">         * Apps targeting API levels greater than 17 will get the fixed, more strict</span><br><span class="line">         * behavior.&lt;/p&gt;</span><br><span class="line">         *</span><br><span class="line">         * @param size the size of the measure specification</span><br><span class="line">         * @param mode the mode of the measure specification</span><br><span class="line">         * @return the measure specification based on size and mode</span><br><span class="line">         */</span><br><span class="line">        public static int makeMeasureSpec(@IntRange(from = 0, to = (1 &lt;&lt; MeasureSpec.MODE_SHIFT) - 1) int size,</span><br><span class="line">                                          @MeasureSpecMode int mode) &#123;</span><br><span class="line">            if (sUseBrokenMakeMeasureSpec) &#123;</span><br><span class="line">                return size + mode;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                return (size &amp; ~MODE_MASK) | (mode &amp; MODE_MASK);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>根据注释可知，该方法将传入的大小和模式生成对应的测量规格，这里多说一点MeasureSpec，它是一个由模式和大小组合的32位int整型值，高二位代表mode，低30位代表size，计算中使用了位运算来提高并优化效率，MeasureSpec有三种模式</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Measure specification mode: The parent has not imposed any constraint</span><br><span class="line"> * on the child. It can be whatever size it wants.</span><br><span class="line"> */</span><br><span class="line">//不确定模式：父布局对子布局没有限制，子布局想要多大就多大，0左移30位</span><br><span class="line">public static final int UNSPECIFIED = 0 &lt;&lt; MODE_SHIFT;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Measure specification mode: The parent has determined an exact size</span><br><span class="line"> * for the child. The child is going to be given those bounds regardless</span><br><span class="line"> * of how big it wants to be.</span><br><span class="line"> */</span><br><span class="line">//确定模式：父布局为子布局规定了一个准确的区域，不管子布局想要多大都不能超过规定范围，1左移30位</span><br><span class="line">public static final int EXACTLY     = 1 &lt;&lt; MODE_SHIFT;</span><br><span class="line"></span><br><span class="line">/**</span><br><span class="line"> * Measure specification mode: The child can be as large as it wants up</span><br><span class="line"> * to the specified size.</span><br><span class="line"> */</span><br><span class="line">//最大模式：子布局可以和自己想要的一样大，2左移30位</span><br><span class="line">public static final int AT_MOST     = 2 &lt;&lt; MODE_SHIFT;</span><br></pre></td></tr></table></figure>
+<p>回到上面，在获取到DecorView宽高的测量规格后，调用performMeasure()方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) &#123;</span><br><span class="line">    Trace.traceBegin(Trace.TRACE_TAG_VIEW, &quot;measure&quot;);</span><br><span class="line">    try &#123;</span><br><span class="line">        mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        Trace.traceEnd(Trace.TRACE_TAG_VIEW);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据传入的宽高测量规格调用mView的measure方法，这里的mView就是DecorView，DecorView extends FrameLayout extends ViewGroup extends View，DecorView 、FrameLayout以及ViewGroup都没有重写measure方法，因此在View中查看measure方法</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/View.java</span><br><span class="line">    /**</span><br><span class="line">     * &lt;p&gt;</span><br><span class="line">     * This is called to find out how big a view should be. The parent</span><br><span class="line">     * supplies constraint information in the width and height parameters.</span><br><span class="line">     * &lt;/p&gt;</span><br><span class="line">     *</span><br><span class="line">     * &lt;p&gt;</span><br><span class="line">     * The actual measurement work of a view is performed in</span><br><span class="line">     * &#123;@link #onMeasure(int, int)&#125;, called by this method. Therefore, only</span><br><span class="line">     * &#123;@link #onMeasure(int, int)&#125; can and must be overridden by subclasses.</span><br><span class="line">     * &lt;/p&gt;</span><br><span class="line">     *</span><br><span class="line">     *</span><br><span class="line">     * @param widthMeasureSpec Horizontal space requirements as imposed by the</span><br><span class="line">     *        parent</span><br><span class="line">     * @param heightMeasureSpec Vertical space requirements as imposed by the</span><br><span class="line">     *        parent</span><br><span class="line">     *</span><br><span class="line">     * @see #onMeasure(int, int)</span><br><span class="line">     */</span><br><span class="line">    public final void measure(int widthMeasureSpec, int heightMeasureSpec) &#123;</span><br><span class="line">        boolean optical = isLayoutModeOptical(this);</span><br><span class="line">        if (optical != isLayoutModeOptical(mParent)) &#123;</span><br><span class="line">            Insets insets = getOpticalInsets();</span><br><span class="line">            int oWidth  = insets.left + insets.right;</span><br><span class="line">            int oHeight = insets.top  + insets.bottom;</span><br><span class="line">            widthMeasureSpec  = MeasureSpec.adjust(widthMeasureSpec,  optical ? -oWidth  : oWidth);</span><br><span class="line">            heightMeasureSpec = MeasureSpec.adjust(heightMeasureSpec, optical ? -oHeight : oHeight);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // Suppress sign extension for the low bytes</span><br><span class="line">        long key = (long) widthMeasureSpec &lt;&lt; 32 | (long) heightMeasureSpec &amp; 0xffffffffL;</span><br><span class="line">        if (mMeasureCache == null) mMeasureCache = new LongSparseLongArray(2);</span><br><span class="line"></span><br><span class="line">        final boolean forceLayout = (mPrivateFlags &amp; PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT;</span><br><span class="line"></span><br><span class="line">        // Optimize layout by avoiding an extra EXACTLY pass when the view is</span><br><span class="line">        // already measured as the correct size. In API 23 and below, this</span><br><span class="line">        // extra pass is required to make LinearLayout re-distribute weight.</span><br><span class="line">        //与上次相比测量规格是否改变</span><br><span class="line">        final boolean specChanged = widthMeasureSpec != mOldWidthMeasureSpec</span><br><span class="line">                || heightMeasureSpec != mOldHeightMeasureSpec;</span><br><span class="line">        final boolean isSpecExactly = MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY</span><br><span class="line">                &amp;&amp; MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY;</span><br><span class="line">        final boolean matchesSpecSize = getMeasuredWidth() == MeasureSpec.getSize(widthMeasureSpec)</span><br><span class="line">                &amp;&amp; getMeasuredHeight() == MeasureSpec.getSize(heightMeasureSpec);</span><br><span class="line">        final boolean needsLayout = specChanged</span><br><span class="line">                &amp;&amp; (sAlwaysRemeasureExactly || !isSpecExactly || !matchesSpecSize);</span><br><span class="line"></span><br><span class="line">        if (forceLayout || needsLayout) &#123;</span><br><span class="line">            // first clears the measured dimension flag</span><br><span class="line">            mPrivateFlags &amp;= ~PFLAG_MEASURED_DIMENSION_SET;</span><br><span class="line"></span><br><span class="line">            resolveRtlPropertiesIfNeeded();</span><br><span class="line"></span><br><span class="line">            int cacheIndex = forceLayout ? -1 : mMeasureCache.indexOfKey(key);</span><br><span class="line">            if (cacheIndex &lt; 0 || sIgnoreMeasureCache) &#123;</span><br><span class="line">                // measure ourselves, this should set the measured dimension flag back</span><br><span class="line">                //调用了onMeasure方法测量</span><br><span class="line">                onMeasure(widthMeasureSpec, heightMeasureSpec);</span><br><span class="line">                mPrivateFlags3 &amp;= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                long value = mMeasureCache.valueAt(cacheIndex);</span><br><span class="line">                // Casting a long to int drops the high 32 bits, no mask needed</span><br><span class="line">                setMeasuredDimensionRaw((int) (value &gt;&gt; 32), (int) value);</span><br><span class="line">                mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            // flag not set, setMeasuredDimension() was not invoked, we raise</span><br><span class="line">            // an exception to warn the developer</span><br><span class="line">            if ((mPrivateFlags &amp; PFLAG_MEASURED_DIMENSION_SET) != PFLAG_MEASURED_DIMENSION_SET) &#123;</span><br><span class="line">                throw new IllegalStateException(&quot;View with id &quot; + getId() + &quot;: &quot;</span><br><span class="line">                        + getClass().getName() + &quot;#onMeasure() did not set the&quot;</span><br><span class="line">                        + &quot; measured dimension by calling&quot;</span><br><span class="line">                        + &quot; setMeasuredDimension()&quot;);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;</span><br><span class="line">        &#125;</span><br><span class="line">        //保存本次View的测量规格用于下次判断</span><br><span class="line">        mOldWidthMeasureSpec = widthMeasureSpec;</span><br><span class="line">        mOldHeightMeasureSpec = heightMeasureSpec;</span><br><span class="line"></span><br><span class="line">        mMeasureCache.put(key, ((long) mMeasuredWidth) &lt;&lt; 32 |</span><br><span class="line">                (long) mMeasuredHeight &amp; 0xffffffffL); // suppress sign extension</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>从注释可知，该方法是查明一个View应该有多大，父布局可以在宽高参数中提供约束信息，实际的测量工作是在这个方法的onMeasure中完成的，因此，子类只能重写onMeasure方法。查看View的onMeasure方法:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * Measure the view and its content to determine the measured width and the</span><br><span class="line"> * measured height. This method is invoked by &#123;@link #measure(int, int)&#125; and</span><br><span class="line"> * should be overridden by subclasses to provide accurate and efficient</span><br><span class="line"> * measurement of their contents.</span><br><span class="line"> * &lt;/p&gt;</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * &lt;strong&gt;CONTRACT:&lt;/strong&gt; When overriding this method, you</span><br><span class="line"> * &lt;em&gt;must&lt;/em&gt; call &#123;@link #setMeasuredDimension(int, int)&#125; to store the</span><br><span class="line"> * measured width and height of this view. Failure to do so will trigger an</span><br><span class="line"> * &lt;code&gt;IllegalStateException&lt;/code&gt;, thrown by</span><br><span class="line"> * &#123;@link #measure(int, int)&#125;. Calling the superclass&apos;</span><br><span class="line"> * &#123;@link #onMeasure(int, int)&#125; is a valid use.</span><br><span class="line"> * &lt;/p&gt;</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * The base class implementation of measure defaults to the background size,</span><br><span class="line"> * unless a larger size is allowed by the MeasureSpec. Subclasses should</span><br><span class="line"> * override &#123;@link #onMeasure(int, int)&#125; to provide better measurements of</span><br><span class="line"> * their content.</span><br><span class="line"> * &lt;/p&gt;</span><br><span class="line"> *</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * If this method is overridden, it is the subclass&apos;s responsibility to make</span><br><span class="line"> * sure the measured height and width are at least the view&apos;s minimum height</span><br><span class="line"> * and width (&#123;@link #getSuggestedMinimumHeight()&#125; and</span><br><span class="line"> * &#123;@link #getSuggestedMinimumWidth()&#125;).</span><br><span class="line"> * &lt;/p&gt;</span><br><span class="line"> *</span><br><span class="line"> * @param widthMeasureSpec horizontal space requirements as imposed by the parent.</span><br><span class="line"> *                         The requirements are encoded with</span><br><span class="line"> *                         &#123;@link android.view.View.MeasureSpec&#125;.</span><br><span class="line"> * @param heightMeasureSpec vertical space requirements as imposed by the parent.</span><br><span class="line"> *                         The requirements are encoded with</span><br><span class="line"> *                         &#123;@link android.view.View.MeasureSpec&#125;.</span><br><span class="line"> *</span><br><span class="line"> * @see #getMeasuredWidth()</span><br><span class="line"> * @see #getMeasuredHeight()</span><br><span class="line"> * @see #setMeasuredDimension(int, int)</span><br><span class="line"> * @see #getSuggestedMinimumHeight()</span><br><span class="line"> * @see #getSuggestedMinimumWidth()</span><br><span class="line"> * @see android.view.View.MeasureSpec#getMode(int)</span><br><span class="line"> * @see android.view.View.MeasureSpec#getSize(int)</span><br><span class="line"> */</span><br><span class="line">protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</span><br><span class="line">    setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),</span><br><span class="line">            getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注释里有一条很重要的介绍，setMeasuredDimension方法必须在onMeasure方法中调用，不然会抛异常。可以看到View的onMeasure内部只是调用了setMeasuredDimension方法，参数一个套一个，先看下setMeasuredDimension</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * &lt;p&gt;This method must be called by &#123;@link #onMeasure(int, int)&#125; to store the</span><br><span class="line"> * measured width and measured height. Failing to do so will trigger an</span><br><span class="line"> * exception at measurement time.&lt;/p&gt;</span><br><span class="line"> *</span><br><span class="line"> * @param measuredWidth The measured width of this view.  May be a complex</span><br><span class="line"> * bit mask as defined by &#123;@link #MEASURED_SIZE_MASK&#125; and</span><br><span class="line"> * &#123;@link #MEASURED_STATE_TOO_SMALL&#125;.</span><br><span class="line"> * @param measuredHeight The measured height of this view.  May be a complex</span><br><span class="line"> * bit mask as defined by &#123;@link #MEASURED_SIZE_MASK&#125; and</span><br><span class="line"> * &#123;@link #MEASURED_STATE_TOO_SMALL&#125;.</span><br><span class="line"> */</span><br><span class="line">protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) &#123;</span><br><span class="line">    boolean optical = isLayoutModeOptical(this);</span><br><span class="line">    if (optical != isLayoutModeOptical(mParent)) &#123;</span><br><span class="line">        Insets insets = getOpticalInsets();</span><br><span class="line">        int opticalWidth  = insets.left + insets.right;</span><br><span class="line">        int opticalHeight = insets.top  + insets.bottom;</span><br><span class="line"></span><br><span class="line">        measuredWidth  += optical ? opticalWidth  : -opticalWidth;</span><br><span class="line">        measuredHeight += optical ? opticalHeight : -opticalHeight;</span><br><span class="line">    &#125;</span><br><span class="line">    setMeasuredDimensionRaw(measuredWidth, measuredHeight);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的setMeasuredDimension将传入的宽高值转手又传给了setMeasuredDimensionRaw</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Sets the measured dimension without extra processing for things like optical bounds.</span><br><span class="line"> * Useful for reapplying consistent values that have already been cooked with adjustments</span><br><span class="line"> * for optical bounds, etc. such as those from the measurement cache.</span><br><span class="line"> *</span><br><span class="line"> * @param measuredWidth The measured width of this view.  May be a complex</span><br><span class="line"> * bit mask as defined by &#123;@link #MEASURED_SIZE_MASK&#125; and</span><br><span class="line"> * &#123;@link #MEASURED_STATE_TOO_SMALL&#125;.</span><br><span class="line"> * @param measuredHeight The measured height of this view.  May be a complex</span><br><span class="line"> * bit mask as defined by &#123;@link #MEASURED_SIZE_MASK&#125; and</span><br><span class="line"> * &#123;@link #MEASURED_STATE_TOO_SMALL&#125;.</span><br><span class="line"> */</span><br><span class="line">private void setMeasuredDimensionRaw(int measuredWidth, int measuredHeight) &#123;</span><br><span class="line">    mMeasuredWidth = measuredWidth;</span><br><span class="line">    mMeasuredHeight = measuredHeight;</span><br><span class="line"></span><br><span class="line">    mPrivateFlags |= PFLAG_MEASURED_DIMENSION_SET;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这个方法中只是将传入的宽高值对View的系统变量赋值，测量流程就走完了。返回看下之前嵌套的里的getDefaultSize方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Utility to return a default size. Uses the supplied size if the</span><br><span class="line"> * MeasureSpec imposed no constraints. Will get larger if allowed</span><br><span class="line"> * by the MeasureSpec.</span><br><span class="line"> *</span><br><span class="line"> * @param size Default size for this view</span><br><span class="line"> * @param measureSpec Constraints imposed by the parent</span><br><span class="line"> * @return The size this view should be.</span><br><span class="line"> */</span><br><span class="line">public static int getDefaultSize(int size, int measureSpec) &#123;</span><br><span class="line">    int result = size;</span><br><span class="line">    int specMode = MeasureSpec.getMode(measureSpec);</span><br><span class="line">    int specSize = MeasureSpec.getSize(measureSpec);</span><br><span class="line"></span><br><span class="line">    switch (specMode) &#123;</span><br><span class="line">    case MeasureSpec.UNSPECIFIED:</span><br><span class="line">        result = size;</span><br><span class="line">        break;</span><br><span class="line">    case MeasureSpec.AT_MOST:</span><br><span class="line">    case MeasureSpec.EXACTLY:</span><br><span class="line">        result = specSize;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">    return result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从注释可知，该方法的作用是根据View布局设置的宽高和父布局传递的测量规格计算View的宽高，第二个参数是父布局的测量规格，因此子View最终大小是由自身布局大小和父布局的测量规格共同决定的。从上面的代码中可以看到，默认情况下，如果父布局指定的测量规格是MeasureSpec.AT_MOST或者MeasureSpec.EXACTLY，那么返回的测量大小是一样的，都是specSize；如果父布局指定的测量规格是MeasureSpec.UNSPECIFIED，那么返回的大小为size，即第一个参数值。specSize通过MeasureSpec.getSize获得，大小由父布局指定；size通过getSuggestedMinimumWidth方法获得：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Returns the suggested minimum width that the view should use. This</span><br><span class="line"> * returns the maximum of the view&apos;s minimum width</span><br><span class="line"> * and the background&apos;s minimum width</span><br><span class="line"> *  (&#123;@link android.graphics.drawable.Drawable#getMinimumWidth()&#125;).</span><br><span class="line"> * &lt;p&gt;</span><br><span class="line"> * When being used in &#123;@link #onMeasure(int, int)&#125;, the caller should still</span><br><span class="line"> * ensure the returned width is within the requirements of the parent.</span><br><span class="line"> *</span><br><span class="line"> * @return The suggested minimum width of the view.</span><br><span class="line"> */</span><br><span class="line">protected int getSuggestedMinimumWidth() &#123;</span><br><span class="line">    return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从注释可知，该方法返回View建议的最小宽高，也就是xml中设置的android:minWidth和 android:minHeight的值，建议的最小宽高是由View的Background尺寸与通过设置View的minWidth/minHeigh属性共同决定的，如果该View设置了Background，就返回minXXX与Background最小宽高中最大的那个。</p>
+<h2 id="DecorView-onMeasure"><a href="#DecorView-onMeasure" class="headerlink" title="DecorView onMeasure"></a>DecorView onMeasure</h2><p>DecorView 、FrameLayout以及View中都有onMeasure方法，在View的measure方法中执行onMeasure时，会先执行DecorView 中onMeasure方法，具体如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br></pre></td><td class="code"><pre><span class="line">源码路径：/SDK/sources/android-24/com/android/internal/policy/DecorView.java</span><br><span class="line">    @Override</span><br><span class="line">    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</span><br><span class="line">        final DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();</span><br><span class="line">        //是否竖屏</span><br><span class="line">        final boolean isPortrait =</span><br><span class="line">                getResources().getConfiguration().orientation == ORIENTATION_PORTRAIT;</span><br><span class="line">        //获取宽高Mode,这里获取的widthMode和heightMode都是MeasureSpec.EXACTLY</span><br><span class="line">        final int widthMode = getMode(widthMeasureSpec);</span><br><span class="line">        final int heightMode = getMode(heightMeasureSpec);</span><br><span class="line"></span><br><span class="line">        boolean fixedWidth = false;</span><br><span class="line">        mApplyFloatingHorizontalInsets = false;</span><br><span class="line">        //widthMode是MeasureSpec.EXACTLY所以不走这</span><br><span class="line">        if (widthMode == AT_MOST) &#123;</span><br><span class="line">            final TypedValue tvw = isPortrait ? mWindow.mFixedWidthMinor : mWindow.mFixedWidthMajor;</span><br><span class="line">            if (tvw != null &amp;&amp; tvw.type != TypedValue.TYPE_NULL) &#123;</span><br><span class="line">                final int w;</span><br><span class="line">                if (tvw.type == TypedValue.TYPE_DIMENSION) &#123;</span><br><span class="line">                    w = (int) tvw.getDimension(metrics);</span><br><span class="line">                &#125; else if (tvw.type == TypedValue.TYPE_FRACTION) &#123;</span><br><span class="line">                    w = (int) tvw.getFraction(metrics.widthPixels, metrics.widthPixels);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    w = 0;</span><br><span class="line">                &#125;</span><br><span class="line">                if (DEBUG_MEASURE) Log.d(mLogTag, &quot;Fixed width: &quot; + w);</span><br><span class="line">                final int widthSize = MeasureSpec.getSize(widthMeasureSpec);</span><br><span class="line">                if (w &gt; 0) &#123;</span><br><span class="line">                    widthMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                            Math.min(w, widthSize), EXACTLY);</span><br><span class="line">                    fixedWidth = true;</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    widthMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                            widthSize - mFloatingInsets.left - mFloatingInsets.right,</span><br><span class="line">                            AT_MOST);</span><br><span class="line">                    mApplyFloatingHorizontalInsets = true;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mApplyFloatingVerticalInsets = false;</span><br><span class="line">        //heightMode是MeasureSpec.EXACTLY所以不走这</span><br><span class="line">        if (heightMode == AT_MOST) &#123;</span><br><span class="line">            final TypedValue tvh = isPortrait ? mWindow.mFixedHeightMajor</span><br><span class="line">                    : mWindow.mFixedHeightMinor;</span><br><span class="line">            if (tvh != null &amp;&amp; tvh.type != TypedValue.TYPE_NULL) &#123;</span><br><span class="line">                final int h;</span><br><span class="line">                if (tvh.type == TypedValue.TYPE_DIMENSION) &#123;</span><br><span class="line">                    h = (int) tvh.getDimension(metrics);</span><br><span class="line">                &#125; else if (tvh.type == TypedValue.TYPE_FRACTION) &#123;</span><br><span class="line">                    h = (int) tvh.getFraction(metrics.heightPixels, metrics.heightPixels);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    h = 0;</span><br><span class="line">                &#125;</span><br><span class="line">                if (DEBUG_MEASURE) Log.d(mLogTag, &quot;Fixed height: &quot; + h);</span><br><span class="line">                final int heightSize = MeasureSpec.getSize(heightMeasureSpec);</span><br><span class="line">                if (h &gt; 0) &#123;</span><br><span class="line">                    heightMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                            Math.min(h, heightSize), EXACTLY);</span><br><span class="line">                &#125; else if ((mWindow.getAttributes().flags &amp; FLAG_LAYOUT_IN_SCREEN) == 0) &#123;</span><br><span class="line">                    heightMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                            heightSize - mFloatingInsets.top - mFloatingInsets.bottom, AT_MOST);</span><br><span class="line">                    mApplyFloatingVerticalInsets = true;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        //获取开端</span><br><span class="line">        getOutsets(mOutsets);</span><br><span class="line">        if (mOutsets.top &gt; 0 || mOutsets.bottom &gt; 0) &#123;</span><br><span class="line">            int mode = MeasureSpec.getMode(heightMeasureSpec);</span><br><span class="line">            if (mode != MeasureSpec.UNSPECIFIED) &#123;</span><br><span class="line">                int height = MeasureSpec.getSize(heightMeasureSpec);</span><br><span class="line">                //重新计算高度测量规格</span><br><span class="line">                heightMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                        height + mOutsets.top + mOutsets.bottom, mode);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if (mOutsets.left &gt; 0 || mOutsets.right &gt; 0) &#123;</span><br><span class="line">            int mode = MeasureSpec.getMode(widthMeasureSpec);</span><br><span class="line">            if (mode != MeasureSpec.UNSPECIFIED) &#123;</span><br><span class="line">                int width = MeasureSpec.getSize(widthMeasureSpec);</span><br><span class="line">                //重新计算宽度测量规格</span><br><span class="line">                widthMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                        width + mOutsets.left + mOutsets.right, mode);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        //调用父类的onMeasure方法，也就是FrameLayout的onMeasure</span><br><span class="line">        super.onMeasure(widthMeasureSpec, heightMeasureSpec);</span><br><span class="line"></span><br><span class="line">        int width = getMeasuredWidth();</span><br><span class="line">        boolean measure = false;</span><br><span class="line"></span><br><span class="line">        widthMeasureSpec = MeasureSpec.makeMeasureSpec(width, EXACTLY);</span><br><span class="line">        //widthMode是MeasureSpec.EXACTLY所以不走这</span><br><span class="line">        if (!fixedWidth &amp;&amp; widthMode == AT_MOST) &#123;</span><br><span class="line">            final TypedValue tv = isPortrait ? mWindow.mMinWidthMinor : mWindow.mMinWidthMajor;</span><br><span class="line">            if (tv.type != TypedValue.TYPE_NULL) &#123;</span><br><span class="line">                final int min;</span><br><span class="line">                if (tv.type == TypedValue.TYPE_DIMENSION) &#123;</span><br><span class="line">                    min = (int)tv.getDimension(metrics);</span><br><span class="line">                &#125; else if (tv.type == TypedValue.TYPE_FRACTION) &#123;</span><br><span class="line">                    min = (int)tv.getFraction(mAvailableWidth, mAvailableWidth);</span><br><span class="line">                &#125; else &#123;</span><br><span class="line">                    min = 0;</span><br><span class="line">                &#125;</span><br><span class="line">                if (DEBUG_MEASURE) Log.d(mLogTag, &quot;Adjust for min width: &quot; + min + &quot;, value::&quot;</span><br><span class="line">                        + tv.coerceToString() + &quot;, mAvailableWidth=&quot; + mAvailableWidth);</span><br><span class="line"></span><br><span class="line">                if (width &lt; min) &#123;</span><br><span class="line">                    widthMeasureSpec = MeasureSpec.makeMeasureSpec(min, EXACTLY);</span><br><span class="line">                    measure = true;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        // TODO: Support height?</span><br><span class="line">        //measure为false所以不走这</span><br><span class="line">        if (measure) &#123;</span><br><span class="line">            super.onMeasure(widthMeasureSpec, heightMeasureSpec);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，由于DecorView的LayoutParams为MATCH_PARENT，所以在getRootMeasureSpec里返回的测量规格是MeasureSpec.EXACTLY，所以这里的onMeasure并没有满足AT_MOST判断逻辑，看一下68行getOutsets方法，其实现是在View.java中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">源码路径:SDK/sources/android-24/android/view/View.java</span><br><span class="line">    /**</span><br><span class="line">     * Returns the outsets, which areas of the device that aren&apos;t a surface, but we would like to</span><br><span class="line">     * treat them as such.</span><br><span class="line">     * @hide</span><br><span class="line">     */</span><br><span class="line">    public void getOutsets(Rect outOutsetRect) &#123;</span><br><span class="line">        if (mAttachInfo != null) &#123;</span><br><span class="line">            outOutsetRect.set(mAttachInfo.mOutsets);</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            outOutsetRect.setEmpty();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">源码路径:SDK/sources/android-24/android/graphics/Rect.java</span><br><span class="line">    /**</span><br><span class="line">     * Set the rectangle to (0,0,0,0)</span><br><span class="line">     */</span><br><span class="line">    public void setEmpty() &#123;</span><br><span class="line">        left = right = top = bottom = 0;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>因此DecorView的onMeasure中判断如果left 、right 、top、bottom、大于0时，则加上这些值重新计算宽高测量规格，调用父类的onMeasure方法，查看FrameLayout的onMeasure</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line">@Override</span><br><span class="line">protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</span><br><span class="line">    //获取子View个数</span><br><span class="line">    int count = getChildCount();</span><br><span class="line">    //widthMeasureSpec和heightMeasureSpec都是MeasureSpec.EXACTLY，所以这里为false</span><br><span class="line">    final boolean measureMatchParentChildren =</span><br><span class="line">            MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.EXACTLY ||</span><br><span class="line">            MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.EXACTLY;</span><br><span class="line">    mMatchParentChildren.clear();</span><br><span class="line"></span><br><span class="line">    int maxHeight = 0;</span><br><span class="line">    int maxWidth = 0;</span><br><span class="line">    int childState = 0;</span><br><span class="line"></span><br><span class="line">    for (int i = 0; i &lt; count; i++) &#123;</span><br><span class="line">        final View child = getChildAt(i);</span><br><span class="line">        //遍历子View,只要Visibility不为GONE都会参与测量</span><br><span class="line">        if (mMeasureAllChildren || child.getVisibility() != GONE) &#123;</span><br><span class="line">            //测量子View的宽高</span><br><span class="line">            measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);</span><br><span class="line">            //获取子View的布局参数</span><br><span class="line">            final LayoutParams lp = (LayoutParams) child.getLayoutParams();</span><br><span class="line">            //计算子View的宽度，包括自身宽度加上leftMargin和rightMargin</span><br><span class="line">            maxWidth = Math.max(maxWidth,</span><br><span class="line">                    child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin);</span><br><span class="line">            //计算子View的高度，包括自身高度加上topMargin和bottomMargin</span><br><span class="line">            maxHeight = Math.max(maxHeight,</span><br><span class="line">                    child.getMeasuredHeight() + lp.topMargin + lp.bottomMargin);</span><br><span class="line">            //保存测量状态</span><br><span class="line">            childState = combineMeasuredStates(childState, child.getMeasuredState());</span><br><span class="line">            //measureMatchParentChildren这里为false</span><br><span class="line">            if (measureMatchParentChildren) &#123;</span><br><span class="line">                if (lp.width == LayoutParams.MATCH_PARENT ||</span><br><span class="line">                        lp.height == LayoutParams.MATCH_PARENT) &#123;</span><br><span class="line">                    //保存那些布局参数声明为MATCH_PARENT的子View</span><br><span class="line">                    mMatchParentChildren.add(child);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    // Account for padding too</span><br><span class="line">    //如果有设置paddingLeft和paddingRight,则宽度值把这两个都算上</span><br><span class="line">    maxWidth += getPaddingLeftWithForeground() + getPaddingRightWithForeground();</span><br><span class="line">    //如果有设置paddingTop和paddingBottom,则高度值把这两个都算上</span><br><span class="line">    maxHeight += getPaddingTopWithForeground() + getPaddingBottomWithForeground();</span><br><span class="line"></span><br><span class="line">    // Check against our minimum height and width</span><br><span class="line">    //和建议的宽高值中取最大</span><br><span class="line">    maxHeight = Math.max(maxHeight, getSuggestedMinimumHeight());</span><br><span class="line">    maxWidth = Math.max(maxWidth, getSuggestedMinimumWidth());</span><br><span class="line"></span><br><span class="line">    // Check against our foreground&apos;s minimum height and width</span><br><span class="line">    //如果设置了Foreground,取最大值</span><br><span class="line">    final Drawable drawable = getForeground();</span><br><span class="line">    if (drawable != null) &#123;</span><br><span class="line">        maxHeight = Math.max(maxHeight, drawable.getMinimumHeight());</span><br><span class="line">        maxWidth = Math.max(maxWidth, drawable.getMinimumWidth());</span><br><span class="line">    &#125;</span><br><span class="line">    //所有的子View都测量完后，根据其中最大子View的宽高设置自己的宽高</span><br><span class="line">    setMeasuredDimension(resolveSizeAndState(maxWidth, widthMeasureSpec, childState),</span><br><span class="line">            resolveSizeAndState(maxHeight, heightMeasureSpec,</span><br><span class="line">                    childState &lt;&lt; MEASURED_HEIGHT_STATE_SHIFT));</span><br><span class="line"></span><br><span class="line">    count = mMatchParentChildren.size();</span><br><span class="line">    //这块在DecorView流程中不走因为count=0</span><br><span class="line">    if (count &gt; 1) &#123;</span><br><span class="line">        for (int i = 0; i &lt; count; i++) &#123;</span><br><span class="line">            final View child = mMatchParentChildren.get(i);</span><br><span class="line">            final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();</span><br><span class="line"></span><br><span class="line">            final int childWidthMeasureSpec;</span><br><span class="line">            if (lp.width == LayoutParams.MATCH_PARENT) &#123;</span><br><span class="line">                final int width = Math.max(0, getMeasuredWidth()</span><br><span class="line">                        - getPaddingLeftWithForeground() - getPaddingRightWithForeground()</span><br><span class="line">                        - lp.leftMargin - lp.rightMargin);</span><br><span class="line">                childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                        width, MeasureSpec.EXACTLY);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                childWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec,</span><br><span class="line">                        getPaddingLeftWithForeground() + getPaddingRightWithForeground() +</span><br><span class="line">                        lp.leftMargin + lp.rightMargin,</span><br><span class="line">                        lp.width);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            final int childHeightMeasureSpec;</span><br><span class="line">            if (lp.height == LayoutParams.MATCH_PARENT) &#123;</span><br><span class="line">                final int height = Math.max(0, getMeasuredHeight()</span><br><span class="line">                        - getPaddingTopWithForeground() - getPaddingBottomWithForeground()</span><br><span class="line">                        - lp.topMargin - lp.bottomMargin);</span><br><span class="line">                childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(</span><br><span class="line">                        height, MeasureSpec.EXACTLY);</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                childHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec,</span><br><span class="line">                        getPaddingTopWithForeground() + getPaddingBottomWithForeground() +</span><br><span class="line">                        lp.topMargin + lp.bottomMargin,</span><br><span class="line">                        lp.height);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            child.measure(childWidthMeasureSpec, childHeightMeasureSpec);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法主要做了这几件事</p>
+<ul>
+<li>遍历子View，传入自身的测量规格，调用measureChildWithMargins测量除了Visibility属性设为GONE的子View的宽高</li>
+<li>获取子View中最大的那个宽高，计算宽高值包括是否设置margin、padding、foreground，以及和建议的最小宽高比较</li>
+<li>调用setMeasuredDimension方法，将最大的子View的宽高值作为自己的宽高值<br>看下这里的measureChildWithMargins方法：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">/** * Ask one of the children of this view to measure itself, taking into</span><br><span class="line">    * account both the MeasureSpec requirements for this view and its padding </span><br><span class="line">    * and margins. The child must have MarginLayoutParams The heavy lifting is </span><br><span class="line">    * done in getChildMeasureSpec. </span><br><span class="line">    * * @param child The child to measure </span><br><span class="line">    * @param parentWidthMeasureSpec The width requirements for this view</span><br><span class="line">    * @param widthUsed Extra space that has been used up by the parent </span><br><span class="line">    *        horizontally (possibly by other children of the parent) </span><br><span class="line">    * @param parentHeightMeasureSpec The height requirements for this view</span><br><span class="line">    * @param heightUsed Extra space that has been used up by the parent </span><br><span class="line">    *        vertically (possibly by other children of the parent) </span><br><span class="line">    */</span><br><span class="line">    protected void measureChildWithMargins(View child,int parentWidthMeasureSpec, int widthUsed,int parentHeightMeasureSpec, int heightUsed) &#123; //获取子View的LayoutParams    final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();    //结合父布局的测量规格和padding，子View的margin和父布局已使用宽度大小widthUsed(前面设置为0)，以及子View自身宽度来获取子View宽度测量规格    </span><br><span class="line">    final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec,            mPaddingLeft + mPaddingRight + lp.leftMargin + lp.rightMargin                    + widthUsed, lp.width);   </span><br><span class="line">    //结合父布局的测量规格和padding，子View的margin和父布局已使用高度大小heightUsed(前面设置为0)，以及子View自身高度来获取子View高度测量规格    </span><br><span class="line">    final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightMeasureSpec,            mPaddingTop + mPaddingBottom + lp.topMargin + lp.bottomMargin                    + heightUsed, lp.height);    </span><br><span class="line">//调用子View的measure方法，如果子View是ViewGroup则递归往下测量    child.measure(childWidthMeasureSpec, childHeightMeasureSpec);&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法对父视图提供的measureSpec参数结合子View的LayoutParams参数，计算出子View的测量规格，再将测量规格传递给子View，最后由子View的measure方法完成测量，看下getChildMeasureSpec方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br></pre></td><td class="code"><pre><span class="line">/**</span><br><span class="line"> * Does the hard part of measureChildren: figuring out the MeasureSpec to</span><br><span class="line"> * pass to a particular child. This method figures out the right MeasureSpec</span><br><span class="line"> * for one dimension (height or width) of one child view.</span><br><span class="line"> *</span><br><span class="line"> * The goal is to combine information from our MeasureSpec with the</span><br><span class="line"> * LayoutParams of the child to get the best possible results. For example,</span><br><span class="line"> * if the this view knows its size (because its MeasureSpec has a mode of</span><br><span class="line"> * EXACTLY), and the child has indicated in its LayoutParams that it wants</span><br><span class="line"> * to be the same size as the parent, the parent should ask the child to</span><br><span class="line"> * layout given an exact size.</span><br><span class="line"> *</span><br><span class="line"> * @param spec The requirements for this view</span><br><span class="line"> * @param padding The padding of this view for the current dimension and</span><br><span class="line"> *        margins, if applicable</span><br><span class="line"> * @param childDimension How big the child wants to be in the current</span><br><span class="line"> *        dimension</span><br><span class="line"> * @return a MeasureSpec integer for the child</span><br><span class="line"> */</span><br><span class="line">public static int getChildMeasureSpec(int spec, int padding, int childDimension) &#123;</span><br><span class="line">    //获取父布局测量规格</span><br><span class="line">    int specMode = MeasureSpec.getMode(spec);</span><br><span class="line">     //获取父布局大小</span><br><span class="line">    int specSize = MeasureSpec.getSize(spec);</span><br><span class="line">    //父布局的大小-父布局的Padding-子布局的Margin，得到值才是子布局的大小。</span><br><span class="line">    int size = Math.max(0, specSize - padding);</span><br><span class="line">    //初始化子布局Mode和Size，最后根据这两个值生成子布局的测量规格</span><br><span class="line">    int resultSize = 0;</span><br><span class="line">    int resultMode = 0;</span><br><span class="line"></span><br><span class="line">    switch (specMode) &#123;</span><br><span class="line">    // Parent has imposed an exact size on us</span><br><span class="line">    case MeasureSpec.EXACTLY:</span><br><span class="line">        if (childDimension &gt;= 0) &#123;</span><br><span class="line">            resultSize = childDimension;</span><br><span class="line">            resultMode = MeasureSpec.EXACTLY;</span><br><span class="line">        &#125; else if (childDimension == LayoutParams.MATCH_PARENT) &#123;</span><br><span class="line">            // Child wants to be our size. So be it.</span><br><span class="line">            resultSize = size;</span><br><span class="line">            resultMode = MeasureSpec.EXACTLY;</span><br><span class="line">        &#125; else if (childDimension == LayoutParams.WRAP_CONTENT) &#123;</span><br><span class="line">            // Child wants to determine its own size. It can&apos;t be</span><br><span class="line">            // bigger than us.</span><br><span class="line">            resultSize = size;</span><br><span class="line">            resultMode = MeasureSpec.AT_MOST;</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line"></span><br><span class="line">    // Parent has imposed a maximum size on us</span><br><span class="line">    case MeasureSpec.AT_MOST:</span><br><span class="line">        if (childDimension &gt;= 0) &#123;</span><br><span class="line">            // Child wants a specific size... so be it</span><br><span class="line">            resultSize = childDimension;</span><br><span class="line">            resultMode = MeasureSpec.EXACTLY;</span><br><span class="line">        &#125; else if (childDimension == LayoutParams.MATCH_PARENT) &#123;</span><br><span class="line">            // Child wants to be our size, but our size is not fixed.</span><br><span class="line">            // Constrain child to not be bigger than us.</span><br><span class="line">            resultSize = size;</span><br><span class="line">            resultMode = MeasureSpec.AT_MOST;</span><br><span class="line">        &#125; else if (childDimension == LayoutParams.WRAP_CONTENT) &#123;</span><br><span class="line">            // Child wants to determine its own size. It can&apos;t be</span><br><span class="line">            // bigger than us.</span><br><span class="line">            resultSize = size;</span><br><span class="line">            resultMode = MeasureSpec.AT_MOST;</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line"></span><br><span class="line">    // Parent asked to see how big we want to be</span><br><span class="line">    case MeasureSpec.UNSPECIFIED:</span><br><span class="line">        if (childDimension &gt;= 0) &#123;</span><br><span class="line">            // Child wants a specific size... let him have it</span><br><span class="line">            resultSize = childDimension;</span><br><span class="line">            resultMode = MeasureSpec.EXACTLY;</span><br><span class="line">        &#125; else if (childDimension == LayoutParams.MATCH_PARENT) &#123;</span><br><span class="line">            // Child wants to be our size... find out how big it should</span><br><span class="line">            // be</span><br><span class="line">            resultSize = View.sUseZeroUnspecifiedMeasureSpec ? 0 : size;</span><br><span class="line">            resultMode = MeasureSpec.UNSPECIFIED;</span><br><span class="line">        &#125; else if (childDimension == LayoutParams.WRAP_CONTENT) &#123;</span><br><span class="line">            // Child wants to determine its own size.... find out how</span><br><span class="line">            // big it should be</span><br><span class="line">            resultSize = View.sUseZeroUnspecifiedMeasureSpec ? 0 : size;</span><br><span class="line">            resultMode = MeasureSpec.UNSPECIFIED;</span><br><span class="line">        &#125;</span><br><span class="line">        break;</span><br><span class="line">    &#125;</span><br><span class="line">    //noinspection ResourceType  </span><br><span class="line">    //生成子布局的测量规格</span><br><span class="line">    return MeasureSpec.makeMeasureSpec(resultSize, resultMode);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由前面分析DecorView的specMode为MeasureSpec.EXACTLY，因此走第一个分支，这里分三种情况：</p>
+<ul>
+<li>如果子布局的width或height是一个精确的值，则测量大小就是这个精确值，测量模式为EXACTLY；</li>
+<li>如果子布局的width或height是MATCH_PARENT，则测量大小是父布局-父布局的Padding-子布局的Margin，测量模式为EXACTLY</li>
+<li>如果子布局的width或height是WRAP_CONTENT，则测量大小是父布局-父布局的Padding-子布局的Margin，测量模式为AT_MOST<br>最后再根据这里的测量大小和测量模式生成子布局的测量规格并返回，子布局根据计算得来的测量规格调用measure方法进行测量，如果子布局是ViewGroup，则递归往下测量，measureChildWithMargins方法执行完后，回到FrameLayout的onMeasure，在61行调用setMeasuredDimension方法，根据布局中最大的子View设置自己的宽高，测量完成。</li>
+</ul>
+<h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2><p>MainActivity.java</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">public class MainActivity extends Activity &#123;</span><br><span class="line">    private InitView initView;</span><br><span class="line">    @Override</span><br><span class="line">    protected void onCreate(Bundle savedInstanceState) &#123;</span><br><span class="line">        super.onCreate(savedInstanceState);</span><br><span class="line">        setContentView(R.layout.activity_main);</span><br><span class="line">        initView = (InitView) findViewById(R.id.initView);</span><br><span class="line">        Log.d(&quot;hcy&quot;, &quot;onCreate: width is &quot; + initView.getWidth());</span><br><span class="line">        Log.d(&quot;hcy&quot;, &quot;onCreate: measuredWidth is &quot; + initView.getMeasuredWidth());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void onResume() &#123;</span><br><span class="line">        super.onResume();</span><br><span class="line">        Log.d(&quot;hcy&quot;, &quot;onResume: width is &quot; + initView.getWidth());</span><br><span class="line">        Log.d(&quot;hcy&quot;, &quot;onResume: measuredWidth is &quot; + initView.getMeasuredWidth());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>自定义View</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">public class InitView extends View &#123;</span><br><span class="line">    private Paint mPaint;</span><br><span class="line"></span><br><span class="line">    public InitView(Context context)&#123;</span><br><span class="line">        this(context, null);</span><br><span class="line">    &#125;</span><br><span class="line">    public InitView(Context context, AttributeSet attrs) &#123;</span><br><span class="line">        this(context, attrs, 0);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public InitView(Context context, AttributeSet attrs, int defStyleAttr) &#123;</span><br><span class="line">        super(context, attrs, defStyleAttr);</span><br><span class="line">        init();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void init() &#123;</span><br><span class="line">        mPaint = new Paint();</span><br><span class="line">        mPaint.setColor(Color.BLACK);</span><br><span class="line">        mPaint.setAntiAlias(true);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</span><br><span class="line">        int specMode = MeasureSpec.getMode(widthMeasureSpec);</span><br><span class="line">        switch (specMode) &#123;</span><br><span class="line">            case MeasureSpec.UNSPECIFIED:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;onMeasure: UNSPECIFIED&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MeasureSpec.EXACTLY:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;onMeasure: EXACTLY&quot;);</span><br><span class="line">                break;</span><br><span class="line">            case MeasureSpec.AT_MOST:</span><br><span class="line">                Log.d(&quot;hcy&quot;, &quot;onMeasure: AT_MOST&quot;);</span><br><span class="line">                break;</span><br><span class="line">            default:</span><br><span class="line">                break;</span><br><span class="line">        &#125;</span><br><span class="line">        super.onMeasure(widthMeasureSpec, heightMeasureSpec);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    protected void onDraw(Canvas canvas) &#123;</span><br><span class="line">        super.onDraw(canvas);</span><br><span class="line">        canvas.drawCircle(getWidth() / 2f, getHeight() / 2f, getWidth() / 2f, mPaint);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>activity_main.xml</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;com.hu.hcy.initview.InitView</span><br><span class="line">    xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;</span><br><span class="line">    android:id=&quot;@+id/initView&quot;</span><br><span class="line">    android:layout_width=&quot;wrap_content&quot;</span><br><span class="line">    android:layout_height=&quot;wrap_content&quot;/&gt;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>设置该View的布局参数为wrap_content，运行效果：</p>
+<p>   <img src="http://7xjvg5.com1.z0.glb.clouddn.com/initView1.png" style="zoom:25%"></p>
+</li>
+</ul>
+<p>打印log如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">05-24 10:45:27.359  7026  7026 D hcy     : onCreate: width is 0</span><br><span class="line">05-24 10:45:27.359  7026  7026 D hcy     : onCreate: measuredWidth is 0</span><br><span class="line">05-24 10:45:27.362  7026  7026 D hcy     : onResume: width is 0</span><br><span class="line">05-24 10:45:27.362  7026  7026 D hcy     : onResume: measuredWidth is 0</span><br><span class="line">05-24 10:45:27.399  7026  7026 D hcy     : onMeasure: AT_MOST</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>设置该View的布局参数为match_parent，运行效果：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/initView1.png" style="zoom:25%"></p>
+<p>打印log如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">05-24 10:57:10.084  8526  8526 D hcy     : onCreate: width is 0</span><br><span class="line">05-24 10:57:10.084  8526  8526 D hcy     : onCreate: measuredWidth is 0</span><br><span class="line">05-24 10:57:10.101  8526  8526 D hcy     : onResume: width is 0</span><br><span class="line">05-24 10:57:10.101  8526  8526 D hcy     : onResume: measuredWidth is 0</span><br><span class="line">05-24 10:57:10.203  8526  8526 D hcy     : onMeasure: EXACTLY</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置View的布局参数为精确值(layout_width=”100dp”，layout_height=”100dp”)，运行效果：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/initView2.png" style="zoom:25%"></p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">05-24 11:06:34.124 10903 10903 D hcy     : onCreate: width is 0</span><br><span class="line">05-24 11:06:34.124 10903 10903 D hcy     : onCreate: measuredWidth is 0</span><br><span class="line">05-24 11:06:34.126 10903 10903 D hcy     : onResume: width is 0</span><br><span class="line">05-24 11:06:34.126 10903 10903 D hcy     : onResume: measuredWidth is 0</span><br><span class="line">05-24 11:06:34.187 10903 10903 D hcy     : onMeasure: EXACTLY</span><br></pre></td></tr></table></figure>
+<p>现象：</p>
+<ul>
+<li>指定View的布局参数为wrap_content，显示却充满整个屏幕，是因为Activity的父布局是id为content的FrameLayout，具体原因在上面getChildMeasureSpec方法中已经分析</li>
+<li>在onCreate和onResume方法中无法获取到View的宽高，因为此时View的测量还没开始。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><a href="http://7xjvg5.com1.z0.glb.clouddn.com/ViewMeasure.png" target="_blank" rel="noopener"><img src="http://7xjvg5.com1.z0.glb.clouddn.com/ViewMeasure.png" alt="img"></a></p>
+<ul>
+<li>View的measure方法由final修饰，子类无法重写，可以通过重写onMeasure方法来完成测量，重写onMeasure后必须调用setMeasuredDimension，当然也可以不重写，Android提供了一个默认测量视图View大小的实现getDefaultSize。</li>
+<li>从流程图来看，measure过程是从顶层父布局向子布局递归调用view.measure方法，实际的测量工作是由onMeasure方法完成，在测量中起关键作用的是测量规格MeasureSpec，最顶层的DecorView的测量规格是通过ViewRootImpl的getRootMeasureSpec方法获得，LayoutParams的宽高均为MATCH_PARENT，specMode为EXACTLY，specSize为屏幕大小，子布局的测量规格由父布局的测量规格和自身的LayoutParams决定，待子布局确定好大小后，父布局再确定自身的大小</li>
+<li>因为ActivityThread的performResumeActivity开始之后才会陆续调用到performTraversals()方法开始测量，所以在Activity的onCreate和onResume方法中调用View.getWidth()和View.getMeasuredHeight()返回值为0， 测量还未开始。</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/05/24/Screen Overlay Detected介绍与解决/" rel="next" title="Screen Overlay Detected介绍与解决">
+                <i class="fa fa-chevron-left"></i> Screen Overlay Detected介绍与解决
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/26/Android View绘制源码分析--Layout/" rel="prev" title="Android View绘制源码分析--Layout">
+                Android View绘制源码分析--Layout <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ViewRootImpl-performTraversals"><span class="nav-number">2.</span> <span class="nav-text">ViewRootImpl performTraversals()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DecorView-onMeasure"><span class="nav-number">3.</span> <span class="nav-text">DecorView onMeasure</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Demo"><span class="nav-number">4.</span> <span class="nav-text">Demo</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

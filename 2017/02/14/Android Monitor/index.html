@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android Studio," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="概述Android Studio 内置了四种性能监测工具Memory Monitor、Network Monitor、CPU Monitor、GPU Monitor，我们可以使用这些工具监测APP的状态，该文简单介绍下这些工具的使用">
+<meta name="keywords" content="Android Studio">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android Monitor">
+<meta property="og:url" content="http://yoursite.com/2017/02/14/Android Monitor/index.html">
+<meta property="og:site_name" content="HuYounger&#39;s Note">
+<meta property="og:description" content="概述Android Studio 内置了四种性能监测工具Memory Monitor、Network Monitor、CPU Monitor、GPU Monitor，我们可以使用这些工具监测APP的状态，该文简单介绍下这些工具的使用">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory3.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory4.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory5.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory6.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory7.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory8.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory10.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/network_monitor.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/GPU_monitor.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor3.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor4.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/gpudebugger1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/framebuffer1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/framebuffer2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/framebuffer3.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/Textures%C2%A0Pane1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/Textures%C2%A0Pane2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/Geometry%C2%A0pane1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/geometry2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/geomery3.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/gpustatepane.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memorypane.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/cpumonitor1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/cpumonitor2.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/captures1.png">
+<meta property="og:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/captures2.png">
+<meta property="og:updated_time" content="2017-10-12T07:31:51.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android Monitor">
+<meta name="twitter:description" content="概述Android Studio 内置了四种性能监测工具Memory Monitor、Network Monitor、CPU Monitor、GPU Monitor，我们可以使用这些工具监测APP的状态，该文简单介绍下这些工具的使用">
+<meta name="twitter:image" content="http://7xjvg5.com1.z0.glb.clouddn.com/memory1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/02/14/Android Monitor/"/>
+
+
+
+
+
+  <title>Android Monitor | HuYounger's Note</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">HuYounger's Note</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/14/Android Monitor/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="HuYounger">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="HuYounger's Note">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android Monitor</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-14T00:00:00+08:00">
+                2017-02-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/02/14/Android Monitor/" class="leancloud_visitors" data-flag-title="Android Monitor">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Android Studio 内置了四种性能监测工具Memory Monitor、Network Monitor、CPU Monitor、GPU Monitor，我们可以使用这些工具监测APP的状态，该文简单介绍下这些工具的使用</p>
+<a id="more"></a>
+<h2 id="Memory-Monitor"><a href="#Memory-Monitor" class="headerlink" title="Memory Monitor"></a>Memory Monitor</h2><p>Memory Monitor工具主要是用来监测APP的内存分配情况，判断是否存在内存泄漏。连接设备，选择好要监测的APP，如图所示：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory1.png" style="zoom:50%"></p>
+<p>A：手动触发GC操作<br>B：获取当前的堆栈信息，生成.hprof文件<br>C：内存分配追踪工具，生成.alloc文件<br>D：已使用内存<br>E：剩余可用内存<br>通过与应用交互并在Memory Monitor中观察它是如何影响内存的使用，图表可以为你展示一些潜在的问题:<br>1.频繁的垃圾收集活动使应用运行缓慢。<br>2.应用耗尽内存导致app崩溃.<br>3.潜在的内存泄漏<br>正常情况下，上图中的D区域会随着时间的走势慢慢上升(就算你与APP没有任何交互)，直到E区域被用完，则会触发GC操作，释放内存，周而复始。如果你发现你的应用是静态的，但是E区域的内存很快就被用完了，即频繁的触发GC操作，这时你就应该引起重视，说不定你的代码中就存在着引起内存泄漏的隐患。</p>
+<h3 id="Dump-Java-Heap"><a href="#Dump-Java-Heap" class="headerlink" title="Dump Java Heap"></a>Dump Java Heap</h3><p>使用场景：定位内存泄漏<br>点击上图中的B按钮开始检测APP，此时APP会变得很卡，容易发生ANR，一段时间过后会生成.hprof文件，如下图所示</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory2.png" style="zoom:50%"></p>
+<p>这里的截图是我故意生成的一个能引起内存泄漏的例子，点击上图右上方的Analyzer Tasks按钮，若代码中存在内存泄漏隐患，在其下方会列出可能引起内存泄漏的Activity，如上图右下方的Leaked Activities，之后我们便可以结合左下方Reference Tree中指出的问题分析，如果你有源码的话还可以索引源码(右键-&gt;Jump to source)。实例代码如下：</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory3.png" style="zoom:50%"></p>
+<p>多次旋转屏幕，使得内存不断增加就容易引起内存泄漏。<br>上面的例子比较简单，可以直接通过Memory Monitor工具就能直接看出，在平常的开发中内存泄漏的问题往往没有这么简单，我们可以借助MAT工具分析。</p>
+<h3 id="MAT"><a href="#MAT" class="headerlink" title="MAT"></a>MAT</h3><p><a href="https://eclipse.org/mat/downloads.php" target="_blank" rel="noopener">MAT(Memory Analyzer Tool)</a>，一个基于Eclipse的内存分析工具，是一个快速、功能丰富的JAVA heap分析工具，它可以帮助我们查找内存泄漏和减少内存消耗。使用内存分析工具从众多的对象中进行分析，快速的计算出在内存中对象的占用大小，看看是谁阻止了垃圾收集器的回收工作，并可以通过报表直观的查看到可能造成这种结果的对象。<br>在使用MAT工具前，我们需要将.hprof文件转换成标准的.hprof文件才能被识别，在Android Studio中可以通过以下操作转换</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory4.png" style="zoom:50%"></p>
+<p>之后用MAT打开，显示如下</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory5.png" style="zoom:50%"></p>
+<p>点击Histogram按钮</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory6.png" style="zoom:50%"></p>
+<p>如图所示，该图会列出内存中所有的对象的个数即其占用的内存大小，其次，我们可以输入指定的Activity名称来缩小定位范围</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory7.png" style="zoom:50%"></p>
+<p>如图所示，这里列出了MainActivity和其内部类MyThread的对象个数即占用的内存大小，接下来我们选择一个条目右键—&gt;Merge Shortest Paths to GC Roots(查看一个对象到GC Roots是否存在引用链相连接)-&gt;Merge Shortest Paths to GC Roots(排除虚引用/弱引用/软引用等等)，</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory8.png" style="zoom:50%"></p>
+<p>如上图所示，就是可能存在内存泄漏的地方，具体还是要结合代码分析。</p>
+<h3 id="GC-Roots"><a href="#GC-Roots" class="headerlink" title="GC Roots"></a>GC Roots</h3><p>对象存活的判定:<br>当一个对象不会再被使用的时候，我们会说这对象已经死亡。对象何时死亡，写程序的人应当是最清楚的。如果计算机也要弄清楚这件事情，就需要使用一些方法来进行对象存活判定，常见的方法有<strong>引用计数（Reference Counting）</strong>和<strong>有可达性分析（Reachability Analysis）</strong>两种。</p>
+<p><strong>引用计数算法</strong>的大致思想是给对象中添加一个引用计数器，每当有一个地方引用它时，计数器值就加1；当引用失效时，计数器值就减1；任何时刻计数器为0的对象就是不可能再被使用的。<br>Java语言里面没有选用引用计数算法来管理内存，其中最主要原因是它没有一个优雅的方案解决对象之间相互循环引用的问题：<br>当两个对象互相引用，即使它们都无法被外界使用时，它们的引用计数器也不会为0。</p>
+<p><strong>可达性算法</strong>的基本思路就是通过一系列的称为GC根节点（GC Roots）的对象作为起始点，从这些节点开始进行向下搜索，搜索所走过的路径成为引用链（Reference Chain），当一个对象到GC Roots没有任何引用链相连（用图论的话来说就是从GC Roots到这个对象不可达）时，则证明此对象是不可用的。</p>
+<p>如上图，对象object 5、object 6、object 7虽然互相有关联，它们的引用并不为0，但是它们到GC Roots是不可达的，因此它们将会被判定为是可回收的对象。</p>
+<h3 id="Allocation-Tracker"><a href="#Allocation-Tracker" class="headerlink" title="Allocation Tracker"></a>Allocation Tracker</h3><p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory1.png" style="zoom:50%"></p>
+<p>在内存图中点击C，启动追踪，再次点击停止追踪，随后自动生成一个alloc结尾的文件，这个文件就记录了这次追踪到的所有数据。</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memory10.png" style="zoom:50%"></p>
+<p>如上图，我们可以看出这次操作中应用里的各个组件的分配次数与占用大小，若发现这两个数据有异常(分配过多，占用过大)，同样可以索引源码优化(前提是你有)，最下方的视图是以另一种较酷炫的方式呈现，感兴趣的可以具体结合文件操作。</p>
+<h2 id="Network-Monitor"><a href="#Network-Monitor" class="headerlink" title="Network Monitor"></a>Network Monitor</h2><p><strong>Network Monitor</strong>是用于显示app网络请求的状态，频繁的网络请求是耗电的重要原因</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/network_monitor.png" style="zoom:50%"></p>
+<p>如上图所示，Tx与Rx分别表示上下行的速度。</p>
+<h2 id="GPU-Monitor"><a href="#GPU-Monitor" class="headerlink" title="GPU Monitor"></a>GPU Monitor</h2><p>GPU Monitor工具可以将进行UI渲染工作所花的时间表现出来，它记录下渲染线程准备以及进行描绘的时间。<br>Android系统每隔16ms发出VSYNC信号，触发对UI进行渲染，如果每次渲染都成功，这样就能够达到流畅的画面所需要的60fps，为了能够实现60fps，这意味着程序的大多数操作都必须在16ms内完成。</p>
+<h3 id="Why-60fps"><a href="#Why-60fps" class="headerlink" title="Why 60fps?"></a>Why 60fps?</h3><p>我们通常都会提到60fps与16ms，可是知道为何会是以程序是否达到60fps来作为App性能的衡量标准吗？这是因为人眼与大脑之间的协作无法感知超过60fps的画面更新。</p>
+<p>12fps大概类似手动快速翻动书籍的帧率，这明显是可以感知到不够顺滑的。24fps使得人眼感知的是连续线性的运动，这其实是归功于运动模糊的效果。24fps是电影胶圈通常使用的帧率，因为这个帧率已经足够支撑大部分电影画面需要表达的内容，同时能够最大的减少费用支出。但是低于30fps是无法顺畅表现绚丽的画面内容的，此时就需要用到60fps来达到想要的效果，当然超过60fps是没有必要的。</p>
+<p>开发app的性能目标就是保持60fps，这意味着每一帧你只有16ms=1000/60的时间来处理所有的任务。</p>
+<h3 id="Get-GPU-Trace"><a href="#Get-GPU-Trace" class="headerlink" title="Get GPU Trace"></a>Get GPU Trace</h3><p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/GPU_monitor.png" style="zoom:50%"></p>
+<p>如上图所示，就是GPU Monitor的样子，点击上图获取gfxtrace按钮后，出现弹出框让你选择要监测的指定线程</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor1.png" style="zoom:50%"></p>
+<p>选定后点击Trace</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor2.png" style="zoom:50%"></p>
+<p>过程中会加载指定的lib,同时手机会弹出Dialog</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor3.png" style="zoom:50%"></p>
+<p>环境需满足条件(手机root，安装GPU Debugging tools以及相关lib)，若不满足会提示：“Failed to connect to the graphics debugger”，假设这里已满足条件</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/gpumonitor4.png" style="zoom:50%"></p>
+<p>判断是否在获取trace的依据是随着你的操作，上图的值不断增长，点击stop获得这个过程中生成的gfxtrace。</p>
+<h2 id="GPU-Debugger"><a href="#GPU-Debugger" class="headerlink" title="GPU Debugger"></a>GPU Debugger</h2><p><strong>GPU Debuger</strong>是检查OpenGL ES 2.0或3.1渲染app图形的情况，打开之前生成的gfxtrace</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/gpudebugger1.png" style="zoom:50%"></p>
+<p>渲染上下文:<br>渲染上下文是执行OpenGL ES命令所需的。它用来收集渲染一张图片所需的状态，包括相关的缓存区、阴影、纹理等。许多游戏应用程序只有一个上下文。更高级的应用程序可以使用超过一个上下文。<br>如果你选择了一个上下文，在GPU Commands 面板中的调用方法将按照调用顺序排列。</p>
+<p>渲染时间线:<br>渲染时间线中的缩略图和GPU Commands 面板下的Frame一一对应，GPU Commands 面板显示了 OpenGL ES 生成每一帧的调用层级。</p>
+<p>支持双buffer的apps渲染一帧的结尾函数是eglSwapBuffers()方法。</p>
+<h3 id="Framebuffer-Pane"><a href="#Framebuffer-Pane" class="headerlink" title="Framebuffer Pane"></a>Framebuffer Pane</h3><p>在GPU Commands面板中选择一帧(生成这一个由多个Draw函数完成，在Draw函数中又有多个openGL ES方法)，Framebuffer 面板显示的内容取决于最后一个方法。</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/framebuffer1.png" style="zoom:50%"></p>
+<p>对于上图红框中各项工具的具体作用可以查看<a href="https://developer.android.com/studio/debug/am-gpu-debugger-analysis.html" target="_blank" rel="noopener">官网</a>的描述，本地测试的时候作用不够明显。</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/framebuffer2.png" style="zoom:50%"></p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/framebuffer3.png" style="zoom:50%"></p>
+<h3 id="Textures-Pane"><a href="#Textures-Pane" class="headerlink" title="Textures Pane"></a>Textures Pane</h3><p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/Textures%C2%A0Pane1.png" style="zoom:50%"></p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/Textures%C2%A0Pane2.png" style="zoom:50%"></p>
+<h3 id="Geometry-pane"><a href="#Geometry-pane" class="headerlink" title="Geometry pane"></a>Geometry pane</h3><p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/Geometry%C2%A0pane1.png" style="zoom:50%"></p>
+<p>几何面板的介绍同样本地的操作不够直观，可以直接查看<a href="https://developer.android.com/studio/debug/am-gpu-debugger-analysis.html" target="_blank" rel="noopener">官网</a>介绍</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/geometry2.png" style="zoom:50%"></p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/geomery3.png" style="zoom:50%"></p>
+<h3 id="GPU-state-pane"><a href="#GPU-state-pane" class="headerlink" title="GPU state pane"></a>GPU state pane</h3><p>查看当前GPU的状态</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/gpustatepane.png" style="zoom:50%"></p>
+<h3 id="Memory-pane"><a href="#Memory-pane" class="headerlink" title="Memory pane"></a>Memory pane</h3><p>查看所选方法的值在内存中的保存情况</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/memorypane.png" style="zoom:50%"></p>
+<h2 id="CPU-Monitor"><a href="#CPU-Monitor" class="headerlink" title="CPU Monitor"></a>CPU Monitor</h2><p><strong>CPU Monitor</strong>可以对代码中的方法进行检测，同样可以生成一个Trace文件</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/cpumonitor1.png" style="zoom:50%"></p>
+<p>生成的Trace文件如下图</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/cpumonitor2.png" style="zoom:50%"></p>
+<p>通过方法的调用次数和所花时间来查看，通常判断方法是：<br>1.如果方法调用次数不多，但每次调用却需要花费很长的时间的函数，可能会有问题。<br>2.如果自身占用时间不长，但调用却非常频繁的函数也可能会有问题。</p>
+<h2 id="Caputures"><a href="#Caputures" class="headerlink" title="Caputures"></a>Caputures</h2><p>Android Monitor捕获到的文件都在该路径下</p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/captures1.png" style="zoom:50%"></p>
+<p><img src="http://7xjvg5.com1.z0.glb.clouddn.com/captures2.png" style="zoom:50%"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android-Studio/" rel="tag"># Android Studio</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/01/14/Launcher Package变化监听机制(二)/" rel="next" title="Launcher Package变化监听机制(二)">
+                <i class="fa fa-chevron-left"></i> Launcher Package变化监听机制(二)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/02/19/git冲突解决/" rel="prev" title="git冲突解决">
+                git冲突解决 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xjvg5.com1.z0.glb.clouddn.com/avatar.jpeg"
+                alt="HuYounger" />
+            
+              <p class="site-author-name" itemprop="name">HuYounger</p>
+              <p class="site-description motion-element" itemprop="description">Less is more</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">36</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Memory-Monitor"><span class="nav-number">2.</span> <span class="nav-text">Memory Monitor</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Dump-Java-Heap"><span class="nav-number">2.1.</span> <span class="nav-text">Dump Java Heap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MAT"><span class="nav-number">2.2.</span> <span class="nav-text">MAT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GC-Roots"><span class="nav-number">2.3.</span> <span class="nav-text">GC Roots</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Allocation-Tracker"><span class="nav-number">2.4.</span> <span class="nav-text">Allocation Tracker</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Network-Monitor"><span class="nav-number">3.</span> <span class="nav-text">Network Monitor</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPU-Monitor"><span class="nav-number">4.</span> <span class="nav-text">GPU Monitor</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Why-60fps"><span class="nav-number">4.1.</span> <span class="nav-text">Why 60fps?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Get-GPU-Trace"><span class="nav-number">4.2.</span> <span class="nav-text">Get GPU Trace</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GPU-Debugger"><span class="nav-number">5.</span> <span class="nav-text">GPU Debugger</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Framebuffer-Pane"><span class="nav-number">5.1.</span> <span class="nav-text">Framebuffer Pane</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Textures-Pane"><span class="nav-number">5.2.</span> <span class="nav-text">Textures Pane</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Geometry-pane"><span class="nav-number">5.3.</span> <span class="nav-text">Geometry pane</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GPU-state-pane"><span class="nav-number">5.4.</span> <span class="nav-text">GPU state pane</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-pane"><span class="nav-number">5.5.</span> <span class="nav-text">Memory pane</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CPU-Monitor"><span class="nav-number">6.</span> <span class="nav-text">CPU Monitor</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Caputures"><span class="nav-number">7.</span> <span class="nav-text">Caputures</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">HuYounger</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("rcy0CA7vKecGb0eQxcnHdO3i-gzGzoHsz", "N9PBf4dqgEeMJL7klXsAli0a");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
